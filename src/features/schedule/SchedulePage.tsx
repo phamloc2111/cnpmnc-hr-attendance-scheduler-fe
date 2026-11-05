@@ -39,7 +39,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     {notice && <p role="status" className="success">{notice}</p>}
     <section className="account-card">
       <div className="schedule-toolbar"><button aria-label="Tuần trước" onClick={() => changeWeek(addDays(week, -7))}>←</button>
-        <div><label htmlFor="schedule-week">Chọn tuần</label><input id="schedule-week" type="date" value={week} onChange={event => changeWeek(event.target.value)} /></div>
+        <div className="schedule-week-picker"><label htmlFor="schedule-week">Chọn tuần</label><input id="schedule-week" type="date" value={week} onChange={event => changeWeek(event.target.value)} /></div>
         <button aria-label="Tuần sau" onClick={() => changeWeek(addDays(week, 7))}>→</button><button onClick={() => changeWeek(vietnamToday())}>Tuần này</button>
         <strong>{dateLabel(week)} – {dateLabel(addDays(week, 6))}</strong><button onClick={() => refresh(value => value + 1)}>Tải lại</button></div>
       {error && !cancel ? <div className="table-state"><p role="alert">{error}</p><button onClick={() => refresh(value => value + 1)}>Thử lại</button></div>
