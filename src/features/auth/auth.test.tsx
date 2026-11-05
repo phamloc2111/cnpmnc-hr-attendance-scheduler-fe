@@ -96,7 +96,7 @@ describe('SS-13 phân quyền', () => {
     expect(screen.queryByRole('link', { name: /Tài khoản/ }) !== null).toBe(role === 'ADMIN')
     expect(screen.queryByRole('button', { name: /Cài đặt/ }) !== null).toBe(role === 'ADMIN')
     expect(screen.queryByRole('button', { name: /Bảng công/ }) !== null).toBe(role !== 'EMPLOYEE')
-    expect(screen.queryByRole('button', { name: /Lịch của tôi/ }) !== null).toBe(role === 'EMPLOYEE')
+    expect(screen.queryByRole('link', { name: /Lịch của tôi/ }) !== null).toBe(role === 'EMPLOYEE')
   })
   it('chặn nhân viên mở đường dẫn quản trị trực tiếp', async () => {
     saveSession({ accessToken: 'test-token', expiresAt: future() })
