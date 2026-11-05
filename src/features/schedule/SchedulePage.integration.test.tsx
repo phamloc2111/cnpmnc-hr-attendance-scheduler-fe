@@ -10,7 +10,7 @@ import type { Role } from '../auth'
 import type { Shift, WorkSchedule } from './types'
 
 const base = 'http://localhost:8080/api/v1'
-const shift: Shift = { id: 'shift-1', name: 'Ca đêm', startTime: '22:00:00', endTime: '06:00:00', breakMinutes: 30, workingMinutes: 450, overnight: true }
+const shift: Shift = { id: 'shift-1', name: 'Ca đêm', startTime: '22:00:00', endTime: '06:00:00', breakMinutes: 30, workingMinutes: 450, overnight: true, requiredHeadcount: 2, requiredPosition: 'Thu ngân' }
 const row: WorkSchedule = { id: 'schedule-1', employeeId: 'employee-1', employeeName: 'Nguyễn An', shiftTemplateId: shift.id, workDate: '2026-11-05', shiftName: 'Ca đêm', startsAt: '2026-11-05T15:00:00Z', endsAt: '2026-11-05T23:00:00Z', breakMinutes: 30, workingMinutes: 450, timezone: 'Asia/Ho_Chi_Minh' }
 let rows: WorkSchedule[] = []
 let shifts: Shift[] = []
@@ -26,8 +26,11 @@ const server = setupServer(
   }),
   http.get(base + '/shift-templates', () => HttpResponse.json(page(shifts))),
   http.post(base + '/shift-templates', async ({ request }) => {
-    bodies.push(await request.json() as Record<string, unknown>); shifts = [shift]
-    return HttpResponse.json(shift, { status: 201 })
+    const body = await request.json() as Record<string, unknown>; bodies.push(body)
+    const minutes = (value: string) => Number(value.split(':')[0]) * 60 + Number(value.split(':')[1])
+    const created: Shift = { id: 'new-shift', name: body.name as string, startTime: body.startTime as string, endTime: body.endTime as string, breakMinutes: body.breakMinutes as number, overnight: body.overnight as boolean, requiredHeadcount: body.requiredHeadcount as number, requiredPosition: body.requiredPosition as string, workingMinutes: (minutes(body.endTime as string) - minutes(body.startTime as string) + 1440) % 1440 - Number(body.breakMinutes) }
+    shifts = [created]
+    return HttpResponse.json(created, { status: 201 })
   }),
   http.get(base + '/accounts', () => HttpResponse.json(page([{ id: 'employee-1', displayName: 'Nguyễn An', email: 'an@example.com' }]))),
   http.post(base + '/work-schedules', async ({ request }) => {
@@ -75,19 +78,69 @@ it('creates a shift template through the API', async () => {
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), 'Ca sáng')
+  await user.type(dialog.getByLabelText('Vị trí cần'), 'Thu ngân')
+  await user.clear(dialog.getByLabelText('Số người cần'))
+  await user.type(dialog.getByLabelText('Số người cần'), '2')
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
   await waitFor(() => expect(bodies).toHaveLength(1))
-  expect(bodies[0]).toEqual({ name: 'Ca sáng', startTime: '08:00', endTime: '17:00', breakMinutes: 60 })
-  expect(await dialog.findByText('Ca đêm')).toBeInTheDocument()
+  expect(bodies[0]).toEqual({ name: 'Ca sáng', startTime: '08:00', endTime: '17:00', breakMinutes: 60, requiredHeadcount: 2, requiredPosition: 'Thu ngân', overnight: false })
+  expect(await dialog.findByText('Ca sáng')).toBeInTheDocument()
+  expect(dialog.getByText('2 người · Thu ngân')).toBeInTheDocument()
 })
 it('rejects a blank shift name before posting', async () => {
   mount(); const user = userEvent.setup()
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), '   ')
+  await user.type(dialog.getByLabelText('Vị trí cần'), 'Thu ngân')
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
   expect(await dialog.findByRole('alert')).toHaveTextContent('Tên ca không được trống')
   expect(bodies).toHaveLength(0)
+})
+it('requires an explicit overnight flag for an overnight shift', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Tên ca'), 'Ca tối')
+  await user.type(dialog.getByLabelText('Vị trí cần'), 'Bảo vệ')
+  await user.clear(dialog.getByLabelText('Giờ bắt đầu')); await user.type(dialog.getByLabelText('Giờ bắt đầu'), '22:00')
+  await user.clear(dialog.getByLabelText('Giờ kết thúc')); await user.type(dialog.getByLabelText('Giờ kết thúc'), '06:00')
+  await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
+  expect(await dialog.findByRole('alert')).toHaveTextContent('Chỉ đánh dấu ca qua đêm')
+  expect(bodies).toHaveLength(0)
+  await user.click(dialog.getByRole('checkbox', { name: 'Ca qua đêm' }))
+  await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
+  await waitFor(() => expect(bodies).toHaveLength(1))
+  expect(bodies[0]).toMatchObject({ startTime: '22:00', endTime: '06:00', overnight: true, requiredHeadcount: 1, requiredPosition: 'Bảo vệ' })
+  expect(await dialog.findByText('Ca tối')).toBeInTheDocument()
+  expect(dialog.getByText(/22:00.*06:00.*\(\+1 ngày\)/)).toBeInTheDocument()
+})
+it('rejects fewer than one required employee before posting', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Tên ca'), 'Ca sáng')
+  await user.type(dialog.getByLabelText('Vị trí cần'), 'Thu ngân')
+  await user.clear(dialog.getByLabelText('Số người cần')); await user.type(dialog.getByLabelText('Số người cần'), '0')
+  await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
+  expect(dialog.getByLabelText('Số người cần')).toBeInvalid()
+  expect(bodies).toHaveLength(0)
+})
+it('requires a nonblank position', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Tên ca'), 'Ca sáng')
+  await user.type(dialog.getByLabelText('Vị trí cần'), '   ')
+  await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
+  expect(await dialog.findByRole('alert')).toHaveTextContent('Vui lòng nhập vị trí cần')
+  expect(bodies).toHaveLength(0)
+})
+it('shows legacy templates without inventing a position', async () => {
+  shifts = [{ ...shift, requiredPosition: null }]
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
+  expect(await within(screen.getByRole('dialog')).findByText('2 người · Chưa khai báo vị trí')).toBeInTheDocument()
 })
 it('assigns a selected employee and shift then reloads the week', async () => {
   mount(); const user = userEvent.setup(); const dialog = await openAssignment(user)
