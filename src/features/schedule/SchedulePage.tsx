@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Modal } from '../../shared/components/Modal'
 import { addDays, dateLabel, instantLabel, monday, timeLabel, vietnamToday } from '../../shared/utils/dates'
 import { listAccounts } from '../accounts'
+import { PositionSelect } from '../positions'
 import { assignShift, cancelSchedule, createShift, listSchedules, listShifts } from './api'
 import type { Page, Shift, WorkSchedule } from './types'
 import './schedule.css'
@@ -96,7 +97,7 @@ function ShiftLibrary({ onClose }: { onClose: () => void }) {
       setError('Chỉ đánh dấu ca qua đêm khi giờ kết thúc nhỏ hơn giờ bắt đầu.'); return
     }
     setBusy(true); setError('')
-    try { await createShift({ name: name.trim(), startTime: start, endTime: end, breakMinutes: Number(rest), requiredHeadcount: Number(headcount), requiredPosition: position.trim(), overnight }); setName(''); setPage(0); refresh(value => value + 1) }
+    try { await createShift({ name: name.trim(), startTime: start, endTime: end, breakMinutes: Number(rest), requiredHeadcount: Number(headcount), requiredPositionId: position, overnight }); setName(''); setPage(0); refresh(value => value + 1) }
     catch (failure: unknown) { setError(errorMessage(failure)) }
     finally { setBusy(false) }
   }
@@ -107,7 +108,7 @@ function ShiftLibrary({ onClose }: { onClose: () => void }) {
       <div><label htmlFor="shift-start">Giờ bắt đầu</label><input id="shift-start" type="time" required value={start} onChange={event => setStart(event.target.value)} /></div>
       <div><label htmlFor="shift-end">Giờ kết thúc</label><input id="shift-end" type="time" required value={end} onChange={event => setEnd(event.target.value)} /></div>
       <div><label htmlFor="shift-headcount">Số người cần</label><input id="shift-headcount" type="number" min="1" step="1" required value={headcount} onChange={event => setHeadcount(event.target.value)} /></div>
-      <div><label htmlFor="shift-position">Vị trí cần</label><input id="shift-position" required maxLength={120} placeholder="Ví dụ: Thu ngân" value={position} onChange={event => setPosition(event.target.value)} /></div>
+      <PositionSelect id="shift-position" label="Vị trí cần" value={position} onChange={setPosition} disabled={busy} required />
       <div className="full-width"><label className="shift-overnight" htmlFor="shift-overnight"><input id="shift-overnight" type="checkbox" checked={overnight} onChange={event => setOvernight(event.target.checked)} />Ca qua đêm</label><small className="muted">Giờ kết thúc phải nhỏ hơn giờ bắt đầu; ca kết thúc vào ngày hôm sau.</small></div>
       <div><label htmlFor="shift-rest">Nghỉ trong ca (phút)</label><input id="shift-rest" type="number" min="0" max="1439" step="1" required value={rest} onChange={event => setRest(event.target.value)} /></div>
     </div><div className="modal-actions"><button className="primary" type="submit">{busy ? 'Đang lưu…' : 'Tạo mẫu ca'}</button></div></fieldset></form>

@@ -10,7 +10,7 @@ import type { Role } from '../auth'
 import type { Shift, WorkSchedule } from './types'
 
 const base = 'http://localhost:8080/api/v1'
-const shift: Shift = { id: 'shift-1', name: 'Ca đêm', startTime: '22:00:00', endTime: '06:00:00', breakMinutes: 30, workingMinutes: 450, overnight: true, requiredHeadcount: 2, requiredPosition: 'Thu ngân' }
+const shift: Shift = { id: 'shift-1', name: 'Ca đêm', startTime: '22:00:00', endTime: '06:00:00', breakMinutes: 30, workingMinutes: 450, overnight: true, requiredHeadcount: 2, requiredPosition: 'Thu ngân', requiredPositionId: 'position-cashier' }
 const row: WorkSchedule = { id: 'schedule-1', employeeId: 'employee-1', employeeName: 'Nguyễn An', shiftTemplateId: shift.id, workDate: '2026-11-05', shiftName: 'Ca đêm', startsAt: '2026-11-05T15:00:00Z', endsAt: '2026-11-05T23:00:00Z', breakMinutes: 30, workingMinutes: 450, timezone: 'Asia/Ho_Chi_Minh' }
 let rows: WorkSchedule[] = []
 let shifts: Shift[] = []
@@ -19,6 +19,11 @@ let requests: URLSearchParams[] = []
 let bodies: Record<string, unknown>[] = []
 const page = <T,>(items: T[], index = 0, totalPages = 1) => ({ items, page: index, size: 20, totalElements: items.length, totalPages })
 const server = setupServer(
+  http.get(base + '/positions', () => HttpResponse.json(page([
+    { id: 'position-cashier', name: 'Thu ngân', active: true, version: 0 },
+    { id: 'position-security', name: 'Bảo vệ', active: true, version: 0 },
+  ]))),
+  http.get(base + '/positions/:id', ({ params }) => HttpResponse.json({ id: params.id, name: params.id === 'position-security' ? 'Bảo vệ' : 'Thu ngân', active: true, version: 0 })),
   http.get(base + '/auth/me', () => HttpResponse.json({ id: 'actor', displayName: 'Quản lý', email: 'actor@example.com', role })),
   http.get(base + '/work-schedules', ({ request }) => {
     const query = new URL(request.url).searchParams; requests.push(query)
@@ -28,7 +33,7 @@ const server = setupServer(
   http.post(base + '/shift-templates', async ({ request }) => {
     const body = await request.json() as Record<string, unknown>; bodies.push(body)
     const minutes = (value: string) => Number(value.split(':')[0]) * 60 + Number(value.split(':')[1])
-    const created: Shift = { id: 'new-shift', name: body.name as string, startTime: body.startTime as string, endTime: body.endTime as string, breakMinutes: body.breakMinutes as number, overnight: body.overnight as boolean, requiredHeadcount: body.requiredHeadcount as number, requiredPosition: body.requiredPosition as string, workingMinutes: (minutes(body.endTime as string) - minutes(body.startTime as string) + 1440) % 1440 - Number(body.breakMinutes) }
+    const created: Shift = { id: 'new-shift', name: body.name as string, startTime: body.startTime as string, endTime: body.endTime as string, breakMinutes: body.breakMinutes as number, overnight: body.overnight as boolean, requiredHeadcount: body.requiredHeadcount as number, requiredPositionId: body.requiredPositionId as string, requiredPosition: body.requiredPositionId === 'position-security' ? 'Bảo vệ' : 'Thu ngân', workingMinutes: (minutes(body.endTime as string) - minutes(body.startTime as string) + 1440) % 1440 - Number(body.breakMinutes) }
     shifts = [created]
     return HttpResponse.json(created, { status: 201 })
   }),
@@ -78,12 +83,12 @@ it('creates a shift template through the API', async () => {
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), 'Ca sáng')
-  await user.type(dialog.getByLabelText('Vị trí cần'), 'Thu ngân')
+  await user.selectOptions(await dialog.findByLabelText('Vị trí cần'), 'position-cashier')
   await user.clear(dialog.getByLabelText('Số người cần'))
   await user.type(dialog.getByLabelText('Số người cần'), '2')
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
   await waitFor(() => expect(bodies).toHaveLength(1))
-  expect(bodies[0]).toEqual({ name: 'Ca sáng', startTime: '08:00', endTime: '17:00', breakMinutes: 60, requiredHeadcount: 2, requiredPosition: 'Thu ngân', overnight: false })
+  expect(bodies[0]).toEqual({ name: 'Ca sáng', startTime: '08:00', endTime: '17:00', breakMinutes: 60, requiredHeadcount: 2, requiredPositionId: 'position-cashier', overnight: false })
   expect(await dialog.findByText('Ca sáng')).toBeInTheDocument()
   expect(dialog.getByText('2 người · Thu ngân')).toBeInTheDocument()
 })
@@ -92,7 +97,7 @@ it('rejects a blank shift name before posting', async () => {
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), '   ')
-  await user.type(dialog.getByLabelText('Vị trí cần'), 'Thu ngân')
+  await user.selectOptions(await dialog.findByLabelText('Vị trí cần'), 'position-cashier')
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
   expect(await dialog.findByRole('alert')).toHaveTextContent('Tên ca không được trống')
   expect(bodies).toHaveLength(0)
@@ -102,7 +107,7 @@ it('requires an explicit overnight flag for an overnight shift', async () => {
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), 'Ca tối')
-  await user.type(dialog.getByLabelText('Vị trí cần'), 'Bảo vệ')
+  await user.selectOptions(await dialog.findByLabelText('Vị trí cần'), 'position-security')
   await user.clear(dialog.getByLabelText('Giờ bắt đầu')); await user.type(dialog.getByLabelText('Giờ bắt đầu'), '22:00')
   await user.clear(dialog.getByLabelText('Giờ kết thúc')); await user.type(dialog.getByLabelText('Giờ kết thúc'), '06:00')
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
@@ -111,7 +116,7 @@ it('requires an explicit overnight flag for an overnight shift', async () => {
   await user.click(dialog.getByRole('checkbox', { name: 'Ca qua đêm' }))
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
   await waitFor(() => expect(bodies).toHaveLength(1))
-  expect(bodies[0]).toMatchObject({ startTime: '22:00', endTime: '06:00', overnight: true, requiredHeadcount: 1, requiredPosition: 'Bảo vệ' })
+  expect(bodies[0]).toMatchObject({ startTime: '22:00', endTime: '06:00', overnight: true, requiredHeadcount: 1, requiredPositionId: 'position-security' })
   expect(await dialog.findByText('Ca tối')).toBeInTheDocument()
   expect(dialog.getByText(/22:00.*06:00.*\(\+1 ngày\)/)).toBeInTheDocument()
 })
@@ -120,20 +125,20 @@ it('rejects fewer than one required employee before posting', async () => {
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), 'Ca sáng')
-  await user.type(dialog.getByLabelText('Vị trí cần'), 'Thu ngân')
+  await user.selectOptions(await dialog.findByLabelText('Vị trí cần'), 'position-cashier')
   await user.clear(dialog.getByLabelText('Số người cần')); await user.type(dialog.getByLabelText('Số người cần'), '0')
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
   expect(dialog.getByLabelText('Số người cần')).toBeInvalid()
   expect(bodies).toHaveLength(0)
 })
-it('requires a nonblank position', async () => {
+it('requires a selected catalog position', async () => {
   mount(); const user = userEvent.setup()
   await user.click(await screen.findByRole('button', { name: 'Mẫu ca' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Tên ca'), 'Ca sáng')
-  await user.type(dialog.getByLabelText('Vị trí cần'), '   ')
+  await waitFor(() => expect(dialog.getByLabelText('Vị trí cần')).toBeEnabled())
   await user.click(dialog.getByRole('button', { name: 'Tạo mẫu ca' }))
-  expect(await dialog.findByRole('alert')).toHaveTextContent('Vui lòng nhập vị trí cần')
+  expect(dialog.getByLabelText('Vị trí cần')).toBeInvalid()
   expect(bodies).toHaveLength(0)
 })
 it('shows legacy templates without inventing a position', async () => {
