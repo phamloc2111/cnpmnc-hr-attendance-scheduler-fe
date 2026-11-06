@@ -5,6 +5,7 @@ import { roleLabels } from '../auth'
 import type { Role, User } from '../auth'
 import { createAccount, updateAccount } from './api'
 import { ManagerSelect } from './ManagerSelect'
+import { PositionSelect } from '../positions'
 import type { Account, AccountDetails } from './types'
 
 export function AccountEditor({ actor, account, onClose, onSaved }: {
@@ -16,7 +17,7 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
   const [displayName, setDisplayName] = useState(account?.displayName ?? '')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>(account?.role ?? 'EMPLOYEE')
-  const [position, setPosition] = useState(account?.position ?? '')
+  const [position, setPosition] = useState(account?.positionId ?? '')
   const [skillsText, setSkillsText] = useState(account?.skills.join(', ') ?? '')
   const [managerId, setManagerId] = useState(account?.managerId ?? '')
   const [busy, setBusy] = useState(false)
@@ -39,7 +40,7 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
     }
     const details: AccountDetails = {
       email: email.trim(), displayName: displayName.trim(), role,
-      position: role === 'EMPLOYEE' ? position.trim() || null : null, skills,
+      positionId: role === 'EMPLOYEE' ? position || null : null, skills,
       managerId: isAdmin && role === 'EMPLOYEE' ? managerId || null : null,
     }
     setBusy(true)
@@ -68,8 +69,7 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
             onChange={event => { setRole(event.target.value as Role); setManagerId(''); setPosition(''); setSkillsText('') }}>
             {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>{isSelf && <small className="muted">Không thể tự đổi vai trò.</small>}</div>}
-        {role === 'EMPLOYEE' && <><div><label htmlFor="account-position">Vị trí</label>
-          <input id="account-position" maxLength={120} value={position} disabled={busy} onChange={event => setPosition(event.target.value)} placeholder="Ví dụ: Thu ngân" /></div>
+        {role === 'EMPLOYEE' && <><PositionSelect id="account-position" label="Vị trí" value={position} currentId={account?.positionId} disabled={busy} onChange={setPosition} />
         <div className="full-width"><label htmlFor="account-skills">Kỹ năng</label>
           <textarea id="account-skills" rows={2} maxLength={1700} value={skillsText} disabled={busy} onChange={event => setSkillsText(event.target.value)} placeholder="Ví dụ: Thu ngân, Pha chế" />
           <small className="muted">Phân tách bằng dấu phẩy. Tối đa 20 kỹ năng.</small></div></>}

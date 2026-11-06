@@ -15,20 +15,25 @@ const employeeId = '00000000-0000-0000-0000-000000000003'
 const endpoint = 'http://localhost:8080/api/v1/accounts'
 const baseEmployee: Account = {
   id: employeeId, email: 'an@example.com', displayName: 'Nguyễn An', role: 'EMPLOYEE',
-  locked: false, position: 'Thu ngân', skills: ['Thu ngân'], managerId, version: 0,
+  locked: false, position: 'Thu ngân', positionId: 'position-cashier', skills: ['Thu ngân'], managerId, version: 0,
 }
 const baseManager: Account = {
   id: managerId, email: 'manager@example.com', displayName: 'Quản lý A', role: 'MANAGER',
-  locked: false, position: null, skills: [], managerId: null, version: 0,
+  locked: false, position: null, positionId: null, skills: [], managerId: null, version: 0,
 }
 let rows: Account[] = []
 let actorRole: Role = 'ADMIN'
 let sentBodies: Record<string, unknown>[] = []
 
-function page(items: Account[], index = 0, total = items.length) {
+function page<T>(items: T[], index = 0, total = items.length) {
   return { items, page: index, size: 20, totalElements: total, totalPages: Math.ceil(total / 20) }
 }
 const handlers = [
+  http.get('http://localhost:8080/api/v1/positions', () => HttpResponse.json(page([
+    { id: 'position-cashier', name: 'Thu ngân', active: true, version: 0 },
+    { id: 'position-barista', name: 'Pha chế', active: true, version: 0 },
+  ]))),
+  http.get('http://localhost:8080/api/v1/positions/:id', ({ params }) => HttpResponse.json({ id: params.id, name: params.id === 'position-barista' ? 'Pha chế' : 'Thu ngân', active: true, version: 0 })),
   http.get('http://localhost:8080/api/v1/auth/me', () => HttpResponse.json({
     id: actorRole === 'ADMIN' ? adminId : managerId,
     email: 'actor@example.com', displayName: 'Người quản lý', role: actorRole,
@@ -51,7 +56,7 @@ const handlers = [
     sentBodies.push(body)
     const created: Account = {
       id: 'new-account', email: body.email as string, displayName: body.displayName as string,
-      role: body.role as Role, locked: false, position: body.position as string | null,
+      role: body.role as Role, locked: false, positionId: body.positionId as string | null, position: body.positionId === 'position-barista' ? 'Pha chế' : body.positionId ? 'Thu ngân' : null,
       skills: body.skills as string[], managerId: body.managerId as string | null, version: 0,
     }
     rows = [...rows, created]
@@ -136,7 +141,7 @@ describe('SS-15 quản lý tài khoản', () => {
     mount()
     const dialog = await openCreate(user)
     await fillCreate(user, dialog)
-    await user.type(within(dialog).getByLabelText('Vị trí'), 'Pha chế')
+    await user.selectOptions(await within(dialog).findByLabelText('Vị trí'), 'position-barista')
     await user.type(within(dialog).getByLabelText('Kỹ năng'), 'Pha chế, Phục vụ')
     expect(within(dialog).queryByLabelText('Tìm người quản lý')).not.toBeInTheDocument()
     await user.click(within(dialog).getByRole('combobox', { name: 'Người quản lý' }))
@@ -145,7 +150,7 @@ describe('SS-15 quản lý tài khoản', () => {
     expect(await screen.findByText('Trần Bình')).toBeInTheDocument()
     expect(sentBodies[0]).toMatchObject({
       email: 'binh@example.com', role: 'EMPLOYEE', managerId,
-      position: 'Pha chế', skills: ['Pha chế', 'Phục vụ'], password: 'Password-12345!',
+      positionId: 'position-barista', skills: ['Pha chế', 'Phục vụ'], password: 'Password-12345!',
     })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
@@ -200,7 +205,7 @@ describe('SS-15 quản lý tài khoản', () => {
     mount()
     const dialog = await openCreate(user)
     await fillCreate(user, dialog)
-    await user.type(within(dialog).getByLabelText('Vị trí'), 'Thu ngân')
+    await user.selectOptions(await within(dialog).findByLabelText('Vị trí'), 'position-cashier')
     await user.type(within(dialog).getByLabelText('Kỹ năng'), 'Pha chế')
     await user.selectOptions(within(dialog).getByLabelText('Vai trò'), role)
     expect(within(dialog).queryByLabelText('Vị trí')).not.toBeInTheDocument()
@@ -208,7 +213,7 @@ describe('SS-15 quản lý tài khoản', () => {
     expect(within(dialog).queryByLabelText('Người quản lý')).not.toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Tạo tài khoản' }))
     await screen.findByText('Trần Bình')
-    expect(sentBodies[0]).toMatchObject({ role, position: null, skills: [], managerId: null })
+    expect(sentBodies[0]).toMatchObject({ role, positionId: null, skills: [], managerId: null })
   })
   it('sửa quản lý không hiện thông tin xếp ca, đổi sang nhân viên mới hiện', async () => {
     const user = userEvent.setup()
@@ -323,4 +328,20 @@ describe('SS-15 quản lý tài khoản', () => {
     expect(await screen.findByText('Quản lý A')).toBeInTheDocument()
     expect(screen.getByText(/Trang 2\/2/)).toBeInTheDocument()
   })
+})
+
+it('giữ vị trí đã ngừng sử dụng khi sửa thông tin nhân viên', async () => {
+  server.use(
+    http.get('http://localhost:8080/api/v1/positions', () => HttpResponse.json(page([{ id: 'position-barista', name: 'Pha chế', active: true, version: 0 }]))),
+    http.get('http://localhost:8080/api/v1/positions/:id', ({ params }) => HttpResponse.json({ id: params.id, name: 'Thu ngân', active: false, version: 1 })),
+  )
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Sửa Nguyễn An' }))
+  const dialog = within(screen.getByRole('dialog'))
+  expect(await dialog.findByRole('option', { name: 'Thu ngân (Ngừng sử dụng)' })).toBeInTheDocument()
+  await user.clear(dialog.getByLabelText('Họ tên'))
+  await user.type(dialog.getByLabelText('Họ tên'), 'Nguyễn An mới')
+  await user.click(dialog.getByRole('button', { name: 'Lưu thay đổi' }))
+  await screen.findByText('Nguyễn An mới')
+  expect(sentBodies[0]).toMatchObject({ positionId: 'position-cashier', displayName: 'Nguyễn An mới' })
 })

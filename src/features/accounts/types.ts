@@ -7,12 +7,13 @@ export type Account = {
   role: Role
   locked: boolean
   position: string | null
+  positionId: string | null
   skills: string[]
   managerId: string | null
   version: number
 }
 export type AccountPage = { items: Account[]; page: number; size: number; totalElements: number; totalPages: number }
 export type AccountDetails = {
-  email: string; displayName: string; role: Role; position: string | null; skills: string[]; managerId: string | null
+  email: string; displayName: string; role: Role; positionId: string | null; skills: string[]; managerId: string | null
 }
 export type AccountFilters = { q: string; role: '' | Role; locked: '' | 'true' | 'false'; page: number }

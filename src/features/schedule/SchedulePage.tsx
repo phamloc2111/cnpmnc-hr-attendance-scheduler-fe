@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Modal } from '../../shared/components/Modal'
 import { addDays, dateLabel, instantLabel, monday, timeLabel, vietnamToday } from '../../shared/utils/dates'
 import { listAccounts } from '../accounts'
+import { PositionSelect } from '../positions'
 import { assignShift, cancelSchedule, createShift, listSchedules, listShifts } from './api'
 import type { Page, Shift, WorkSchedule } from './types'
 import './schedule.css'
@@ -39,7 +40,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     {notice && <p role="status" className="success">{notice}</p>}
     <section className="account-card">
       <div className="schedule-toolbar"><button aria-label="Tuần trước" onClick={() => changeWeek(addDays(week, -7))}>←</button>
-        <div><label htmlFor="schedule-week">Chọn tuần</label><input id="schedule-week" type="date" value={week} onChange={event => changeWeek(event.target.value)} /></div>
+        <div className="schedule-week-picker"><label htmlFor="schedule-week">Chọn tuần</label><input id="schedule-week" type="date" value={week} onChange={event => changeWeek(event.target.value)} /></div>
         <button aria-label="Tuần sau" onClick={() => changeWeek(addDays(week, 7))}>→</button><button onClick={() => changeWeek(vietnamToday())}>Tuần này</button>
         <strong>{dateLabel(week)} – {dateLabel(addDays(week, 6))}</strong><button onClick={() => refresh(value => value + 1)}>Tải lại</button></div>
       {error && !cancel ? <div className="table-state"><p role="alert">{error}</p><button onClick={() => refresh(value => value + 1)}>Thử lại</button></div>
@@ -74,6 +75,9 @@ function ShiftLibrary({ onClose }: { onClose: () => void }) {
   const [start, setStart] = useState('08:00')
   const [end, setEnd] = useState('17:00')
   const [rest, setRest] = useState('60')
+  const [headcount, setHeadcount] = useState('1')
+  const [position, setPosition] = useState('')
+  const [overnight, setOvernight] = useState(false)
   useEffect(() => {
     let active = true
     setData(null); setError('')
@@ -86,23 +90,32 @@ function ShiftLibrary({ onClose }: { onClose: () => void }) {
     const minutes = (value: string) => Number(value.split(':')[0]) * 60 + Number(value.split(':')[1])
     const duration = (minutes(end) - minutes(start) + 1440) % 1440
     if (!name.trim() || !duration || Number(rest) >= duration) { setError('Tên ca không được trống, giờ phải khác nhau và thời gian nghỉ phải ngắn hơn ca làm.'); return }
+    if (!position.trim() || !Number.isInteger(Number(headcount)) || Number(headcount) < 1) {
+      setError('Vui lòng nhập vị trí cần và số người cần là số nguyên, ít nhất 1.'); return
+    }
+    if ((minutes(end) < minutes(start)) !== overnight) {
+      setError('Chỉ đánh dấu ca qua đêm khi giờ kết thúc nhỏ hơn giờ bắt đầu.'); return
+    }
     setBusy(true); setError('')
-    try { await createShift({ name: name.trim(), startTime: start, endTime: end, breakMinutes: Number(rest) }); setName(''); setPage(0); refresh(value => value + 1) }
+    try { await createShift({ name: name.trim(), startTime: start, endTime: end, breakMinutes: Number(rest), requiredHeadcount: Number(headcount), requiredPositionId: position, overnight }); setName(''); setPage(0); refresh(value => value + 1) }
     catch (failure: unknown) { setError(errorMessage(failure)) }
     finally { setBusy(false) }
   }
   return <Modal title="Mẫu ca làm việc" busy={busy} onClose={onClose}>
-    <p className="muted">Giờ kết thúc nhỏ hơn giờ bắt đầu là ca qua đêm. Mẫu ca dùng chung cho quản lý và quản trị.</p>
+    <p className="muted">Nhập nhu cầu nhân sự cho ca. Nếu kết thúc vào ngày hôm sau, hãy đánh dấu Ca qua đêm. Mẫu ca dùng chung cho quản lý và quản trị.</p>
     <form onSubmit={event => { void save(event) }}><fieldset disabled={busy} className="schedule-fields"><div className="form-grid">
       <div className="full-width"><label htmlFor="shift-name">Tên ca</label><input id="shift-name" required maxLength={120} value={name} onChange={event => setName(event.target.value)} /></div>
       <div><label htmlFor="shift-start">Giờ bắt đầu</label><input id="shift-start" type="time" required value={start} onChange={event => setStart(event.target.value)} /></div>
       <div><label htmlFor="shift-end">Giờ kết thúc</label><input id="shift-end" type="time" required value={end} onChange={event => setEnd(event.target.value)} /></div>
+      <div><label htmlFor="shift-headcount">Số người cần</label><input id="shift-headcount" type="number" min="1" step="1" required value={headcount} onChange={event => setHeadcount(event.target.value)} /></div>
+      <PositionSelect id="shift-position" label="Vị trí cần" value={position} onChange={setPosition} disabled={busy} required />
+      <div className="full-width"><label className="shift-overnight" htmlFor="shift-overnight"><input id="shift-overnight" type="checkbox" checked={overnight} onChange={event => setOvernight(event.target.checked)} />Ca qua đêm</label><small className="muted">Giờ kết thúc phải nhỏ hơn giờ bắt đầu; ca kết thúc vào ngày hôm sau.</small></div>
       <div><label htmlFor="shift-rest">Nghỉ trong ca (phút)</label><input id="shift-rest" type="number" min="0" max="1439" step="1" required value={rest} onChange={event => setRest(event.target.value)} /></div>
     </div><div className="modal-actions"><button className="primary" type="submit">{busy ? 'Đang lưu…' : 'Tạo mẫu ca'}</button></div></fieldset></form>
     {error && <div role="alert" className="error">{error} <button onClick={() => refresh(value => value + 1)}>Tải lại danh sách</button></div>}
     <h3>Danh sách mẫu ca</h3>
     {!data ? !error && <p role="status">Đang tải mẫu ca…</p> : data.items.length === 0 ? <p>Chưa có mẫu ca.</p> : <>
-      <ul className="shift-list">{data.items.map(shift => <li key={shift.id}><strong>{shift.name}</strong><span>{timeLabel(shift.startTime)} – {timeLabel(shift.endTime)}{shift.overnight && ' (+1 ngày)'} · nghỉ {shift.breakMinutes} phút · làm {shift.workingMinutes} phút</span></li>)}</ul>
+      <ul className="shift-list">{data.items.map(shift => <li key={shift.id}><strong>{shift.name}</strong><span>{shift.requiredHeadcount} người · {shift.requiredPosition ?? 'Chưa khai báo vị trí'}</span><span>{timeLabel(shift.startTime)} – {timeLabel(shift.endTime)}{shift.overnight && ' (+1 ngày)'} · nghỉ {shift.breakMinutes} phút · làm {shift.workingMinutes} phút</span></li>)}</ul>
       <Pager page={page} pages={data.totalPages} onChange={setPage} /></>}
   </Modal>
 }
@@ -160,7 +173,7 @@ function Assignment({ initialDate, onClose, onSaved }: { initialDate: string; on
       <label htmlFor="assign-shift">Mẫu ca</label>
       {shiftError ? <p role="alert">{shiftError} <button type="button" onClick={() => refresh(value => value + 1)}>Thử lại</button></p>
         : !shifts ? <p role="status">Đang tải mẫu ca…</p>
-        : <><select id="assign-shift" required value={shiftId} onChange={event => setShiftId(event.target.value)}><option value="">Chọn mẫu ca</option>{shifts.items.map(shift => <option key={shift.id} value={shift.id}>{shift.name} · {timeLabel(shift.startTime)}–{timeLabel(shift.endTime)}{shift.overnight ? ' (+1 ngày)' : ''}</option>)}</select>
+        : <><select id="assign-shift" required value={shiftId} onChange={event => setShiftId(event.target.value)}><option value="">Chọn mẫu ca</option>{shifts.items.map(shift => <option key={shift.id} value={shift.id}>{shift.name} · {shift.requiredHeadcount} người · {shift.requiredPosition ?? 'Chưa khai báo vị trí'} · {timeLabel(shift.startTime)}–{timeLabel(shift.endTime)}{shift.overnight ? ' (+1 ngày)' : ''}</option>)}</select>
           {shifts.totalPages > 1 && <Pager page={shiftPage} pages={shifts.totalPages} onChange={value => { setShiftPage(value); setShiftId('') }} />}
           {shifts.items.length === 0 && <p>Chưa có mẫu ca. Đóng hộp thoại và vào Mẫu ca để tạo trước.</p>}</>}
       <label htmlFor="assign-date">Ngày bắt đầu ca</label><input id="assign-date" type="date" required value={date} onChange={event => setDate(event.target.value)} />
