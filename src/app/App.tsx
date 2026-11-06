@@ -62,7 +62,7 @@ function Workspace({ endpoint, name }: { endpoint: string; name: string }) {
     setError('')
     request<{ title: string; description: string }>('/workspaces/' + endpoint)
       .then(value => { if (active) setData(value) })
-      .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Không thể tải dữ liệu.') })
+      .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Không thể tải dữ liệu.')})
     return () => { active = false }
   }, [endpoint, attempt])
   if (error) return <main className="workspace"><p className="error" role="alert">{error}</p><button onClick={() => setAttempt(value => value + 1)}>Thử lại</button></main>
