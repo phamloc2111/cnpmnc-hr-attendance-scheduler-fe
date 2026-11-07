@@ -8,6 +8,7 @@ import { AuthProvider } from '../auth/AuthProvider'
 import { saveSession } from '../../shared/api/client'
 import type { WorkSchedule } from '../schedule'
 import { InstallApp } from './InstallApp'
+import { monthRange, moveMonth } from './MonthSchedule'
 import { shiftSummary } from './home'
 
 const base = 'http://localhost:8080/api/v1'
@@ -45,8 +46,8 @@ const mount = () => render(<AuthProvider><App /></AuthProvider>)
 it('shows the assigned shift with Vietnamese date, Vietnam time and position', async () => {
   mount()
   expect(await screen.findByText('Thứ Hai, 09/11/2026 · 07:00–11:00 · Thu ngân')).toBeInTheDocument()
-  expect(requests[0]?.get('from')).toBe('2026-11-08')
-  expect(requests[0]?.get('to')).toBe('2026-11-09')
+  expect(requests.some(query => query.get('from') === '2026-11-08')).toBe(true)
+  expect(requests.some(query => query.get('to') === '2026-11-09')).toBe(true)
   expect(screen.getByRole('button', { name: 'Điểm danh' })).toBeEnabled()
   expect(screen.getByRole('link', { name: 'Xem lịch của tôi →' })).toHaveAttribute('href', '#/my-schedule')
 })
@@ -82,7 +83,7 @@ it('does not enable attendance while loading', async () => {
 it('shows network errors and retries without displaying sample shifts', async () => {
   server.use(http.get(base + '/work-schedules', () => HttpResponse.json({ message: 'Mất kết nối lịch' }, { status: 503 })))
   mount(); const user = userEvent.setup()
-  expect(await screen.findByRole('alert')).toHaveTextContent('Mất kết nối lịch')
+  expect(await within(await screen.findByRole('region', { name: 'Ca làm hôm nay' })).findByRole('alert')).toHaveTextContent('Mất kết nối lịch')
   expect(screen.getByRole('button', { name: 'Điểm danh' })).toBeDisabled()
   expect(screen.queryByText('Ca sáng')).not.toBeInTheDocument()
   server.resetHandlers()
@@ -100,7 +101,7 @@ it('keeps an ongoing previous-day overnight shift and ignores ended previous shi
   expect(await screen.findByText('Ca đêm đang tiếp tục')).toBeInTheDocument()
   expect(screen.getByText('Chủ Nhật, 08/11/2026 · 22:00–06:00 (+1 ngày) · Thu ngân')).toBeInTheDocument()
   expect(screen.queryByText('Ca đã qua')).not.toBeInTheDocument()
-  expect(requests[0]?.get('to')).toBe('2026-11-09')
+  expect(requests.some(query => query.get('to') === '2026-11-09')).toBe(true)
 })
 
 it('does not allow preparing attendance for ended shifts', async () => {
@@ -118,7 +119,7 @@ it('loads every page in the two-day range', async () => {
   }))
   mount()
   expect(await screen.findByText('Ca trang hai')).toBeInTheDocument()
-  expect(requests.map(query => query.get('page'))).toEqual(['0', '1'])
+  expect(requests.filter(query => query.get('from') === '2026-11-08').map(query => query.get('page'))).toEqual(['0', '1'])
 })
 
 it('refreshes the Vietnam work date when returning after midnight', async () => {
@@ -126,7 +127,7 @@ it('refreshes the Vietnam work date when returning after midnight', async () => 
   await screen.findByRole('heading', { name: 'Ca sáng' })
   now = Date.parse('2026-11-09T17:05:00Z') // Tuesday 00:05 Vietnam.
   fireEvent(window, new Event('focus'))
-  await waitFor(() => expect(requests.at(-1)?.get('to')).toBe('2026-11-10'))
+  await waitFor(() => expect(requests.some(query => query.get('from') === '2026-11-09' && query.get('to') === '2026-11-10')).toBe(true))
 })
 
 it('denies the employee home route to management roles', async () => {
@@ -137,6 +138,78 @@ it('denies the employee home route to management roles', async () => {
 
 it('shows a clear position fallback for legacy schedules', () => {
   expect(shiftSummary({ ...row, requiredPosition: null })).toContain('Chưa có vị trí')
+})
+
+
+it('loads the full calendar month and lets employees inspect a day', async () => {
+  mount(); const user = userEvent.setup()
+  const calendar = within(await screen.findByRole('region', { name: 'Lịch làm việc tháng' }))
+  expect(await calendar.findByRole('button', { name: 'Xem lịch ngày 09/11/2026' })).toHaveAttribute('aria-current', 'date')
+  expect(calendar.getAllByRole('button', { name: /Xem lịch ngày/ })).toHaveLength(30)
+  expect(requests.some(query => query.get('from') === '2026-11-01' && query.get('to') === '2026-11-30')).toBe(true)
+  await user.click(calendar.getByRole('button', { name: 'Xem lịch ngày 09/11/2026' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Lịch ngày 09/11/2026' }))
+  expect(dialog.getByRole('heading', { name: 'Ca sáng' })).toBeInTheDocument()
+  expect(dialog.getByText('Thứ Hai, 09/11/2026 · 07:00–11:00 · Thu ngân')).toBeInTheDocument()
+})
+
+it('changes calendar month with valid month boundaries and returns to today', async () => {
+  mount(); const user = userEvent.setup()
+  await screen.findByRole('button', { name: 'Xem lịch ngày 30/11/2026' })
+  await user.click(screen.getByRole('button', { name: 'Tháng trước' }))
+  await screen.findByRole('button', { name: 'Xem lịch ngày 31/10/2026' })
+  expect(requests.some(query => query.get('from') === '2026-10-01' && query.get('to') === '2026-10-31')).toBe(true)
+  await user.click(screen.getByRole('button', { name: 'Hôm nay' }))
+  expect(await screen.findByRole('button', { name: 'Xem lịch ngày 09/11/2026' })).toHaveAttribute('aria-current', 'date')
+})
+
+it('does not mistake an unassigned weekend for approved time off', async () => {
+  rows = []; mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Xem lịch ngày 08/11/2026' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Lịch ngày 08/11/2026' }))
+  expect(dialog.getByText('Chưa có ca làm được phân trong ngày này.')).toBeInTheDocument()
+  expect(screen.queryByText('Ngày nghỉ')).not.toBeInTheDocument()
+})
+
+it('calendar errors can be retried without blocking attendance for a loaded shift', async () => {
+  server.use(http.get(base + '/work-schedules', ({ request }) => {
+    const query = new URL(request.url).searchParams
+    if (query.get('from') === '2026-11-01') return HttpResponse.json({ message: 'Không tải được lịch tháng' }, { status: 503 })
+    return HttpResponse.json({ items: [row], page: 0, totalPages: 1 })
+  }))
+  mount(); const user = userEvent.setup()
+  const calendar = within(await screen.findByRole('region', { name: 'Lịch làm việc tháng' }))
+  expect(await calendar.findByRole('alert')).toHaveTextContent('Không tải được lịch tháng')
+  await screen.findByRole('heading', { name: 'Ca sáng' })
+  expect(screen.getByRole('button', { name: 'Điểm danh' })).toBeEnabled()
+  server.resetHandlers()
+  await user.click(calendar.getByRole('button', { name: 'Thử lại lịch tháng' }))
+  expect(await calendar.findByRole('button', { name: 'Xem lịch ngày 09/11/2026' })).toBeInTheDocument()
+})
+
+it('shows planned schedule totals instead of fabricated attendance hours', async () => {
+  rows = [row, { ...row, id: 'shift-2', workDate: '2026-11-10', workingMinutes: 90 }]
+  mount()
+  await screen.findByRole('button', { name: 'Xem lịch ngày 10/11/2026' })
+  const stats = within(screen.getByRole('region', { name: 'Tổng quan lịch tháng' }))
+  expect(stats.getByText('Giờ được phân tháng này')).toBeInTheDocument()
+  expect(stats.getByText((_, element) => element?.tagName === 'STRONG' && element.textContent === '5h 30m')).toBeInTheDocument()
+  expect(stats.getByText('0/2 ca đã phân trong tháng')).toBeInTheDocument()
+})
+
+it('opens the employee profile from the bottom navigation', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Cá nhân' }))
+  const profile = within(screen.getByRole('dialog', { name: 'Tài khoản của tôi' }))
+  expect(profile.getByText('an@example.com')).toBeInTheDocument()
+  expect(profile.getByRole('button', { name: 'Đổi mật khẩu' })).toBeInTheDocument()
+  expect(profile.getByRole('button', { name: 'Đăng xuất' })).toBeInTheDocument()
+})
+
+it('handles leap months and year boundaries for schedule queries', () => {
+  expect(monthRange('2028-02')).toEqual({ first: '2028-02-01', last: '2028-02-29' })
+  expect(moveMonth('2026-12', 1)).toBe('2027-01')
+  expect(moveMonth('2027-01', -1)).toBe('2026-12')
 })
 
 it('offers manual home-screen installation instructions', () => {
