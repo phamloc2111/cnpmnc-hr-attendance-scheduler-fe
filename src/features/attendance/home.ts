@@ -2,12 +2,15 @@ import { listSchedules } from '../schedule'
 import type { WorkSchedule } from '../schedule'
 import { addDays, dateLabel, instantLabel } from '../../shared/utils/dates'
 
-export async function loadHomeSchedules(today: string) {
+export function loadHomeSchedules(today: string) {
+  return loadScheduleRange(addDays(today, -1), today)
+}
+export async function loadScheduleRange(from: string, to: string) {
   const items: WorkSchedule[] = []
   let page = 0
   let pages = 1
   do {
-    const result = await listSchedules(addDays(today, -1), today, page)
+    const result = await listSchedules(from, to, page)
     items.push(...result.items)
     pages = result.totalPages
     page++

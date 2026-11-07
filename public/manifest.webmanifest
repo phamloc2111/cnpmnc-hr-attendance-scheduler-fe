@@ -6,8 +6,8 @@
   "start_url": "/#/employee",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f6f8f6",
-  "theme_color": "#245d49",
+  "background_color": "#f7f9fc",
+  "theme_color": "#0758c9",
   "icons": [
     {
       "src": "/icons/icon-192.png",
