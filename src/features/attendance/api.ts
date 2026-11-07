@@ -1,5 +1,5 @@
 import { request } from '../../shared/api/client'
-import type { AttendanceFilter, AttendancePageResponse, AttendanceRecord } from './types'
+import type { AttendanceFilter, AttendancePageResponse, AttendanceRecord, RegisteredDevice } from './types'
 
 export function listAttendanceRecords(filter: AttendanceFilter = {}) {
   const query = new URLSearchParams({
@@ -16,4 +16,21 @@ export function listAttendanceRecords(filter: AttendanceFilter = {}) {
 
 export function getAttendanceRecord(id: string) {
   return request<AttendanceRecord>('/attendance-records/' + id)
+}
+
+export function listRegisteredDevices() {
+  return request<RegisteredDevice[]>('/attendance-records/devices')
+}
+
+export function registerEmployeeDevice(employeeId: string, deviceId: string, deviceName: string) {
+  return request<RegisteredDevice>('/attendance-records/devices/' + employeeId, {
+    method: 'PUT',
+    body: JSON.stringify({ deviceId: deviceId.trim(), deviceName: deviceName.trim() || null }),
+  })
+}
+
+export function resetEmployeeDevice(employeeId: string) {
+  return request<void>('/attendance-records/devices/' + employeeId, {
+    method: 'DELETE',
+  })
 }
