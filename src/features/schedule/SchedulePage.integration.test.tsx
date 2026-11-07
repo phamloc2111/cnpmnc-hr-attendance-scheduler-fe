@@ -201,6 +201,52 @@ it('employees can view their schedule without assignment actions', async () => {
   expect(screen.queryByRole('button', { name: /Hủy ca/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Mẫu ca' })).not.toBeInTheDocument()
 })
+
+it('employee weekly view keeps empty state and home navigation', async () => {
+  role = 'EMPLOYEE'; window.location.hash = '/my-schedule'; mount()
+  expect(await screen.findByText('Chưa có lịch trong tuần này')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Về trang chủ ShiftSync' })).toHaveAttribute('href', '#/employee')
+  expect(screen.getByLabelText('Chọn tuần')).toHaveValue('2026-11-02')
+  expect(screen.queryByRole('table')).not.toBeInTheDocument()
+})
+it('employee weekly cards show overnight times and open full details', async () => {
+  role = 'EMPLOYEE'; window.location.hash = '/my-schedule'; rows = [row]; mount()
+  expect(await screen.findByText('(+1 ngày)')).toBeInTheDocument()
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: /Chi tiết Ca đêm ngày/ }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Chi tiết ca làm' }))
+  expect(dialog.getByText('05/11/2026 22:00 → 06/11/2026 06:00')).toBeInTheDocument()
+  expect(dialog.getByText('Nghỉ 30 phút · Làm 450 phút')).toBeInTheDocument()
+})
+it('employee weekly controls request the next week without changing management filters', async () => {
+  role = 'EMPLOYEE'; window.location.hash = '/my-schedule'; mount()
+  await screen.findByText('Chưa có lịch trong tuần này')
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Tuần sau' }))
+  await waitFor(() => expect(requests.at(-1)?.get('from')).toBe('2026-11-09'))
+  expect(requests.at(-1)?.get('to')).toBe('2026-11-15')
+})
+it('employee weekly view loads the next page from the server', async () => {
+  role = 'EMPLOYEE'; window.location.hash = '/my-schedule'
+  server.use(http.get(base + '/work-schedules', ({ request }) => {
+    const query = new URL(request.url).searchParams; requests.push(query)
+    return HttpResponse.json(page([row], Number(query.get('page')), 2))
+  }))
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Trang sau' }))
+  await waitFor(() => expect(requests.at(-1)?.get('page')).toBe('1'))
+  expect(await screen.findByText('Trang 2 / 2')).toBeInTheDocument()
+})
+it('employee weekly API errors offer retry and retain authentication', async () => {
+  role = 'EMPLOYEE'; window.location.hash = '/my-schedule'
+  server.use(http.get(base + '/work-schedules', () => HttpResponse.json({ message: 'Máy chủ tạm lỗi' }, { status: 503 })))
+  mount(); const user = userEvent.setup()
+  expect(await screen.findByRole('alert')).toHaveTextContent('Máy chủ tạm lỗi')
+  server.resetHandlers()
+  await user.click(screen.getByRole('button', { name: 'Thử lại' }))
+  expect(await screen.findByText('Chưa có lịch trong tuần này')).toBeInTheDocument()
+  expect(sessionStorage.getItem('shiftsync.session')).not.toBeNull()
+})
+
 it('expired schedule requests return to login', async () => {
   server.use(http.get(base + '/work-schedules', () => HttpResponse.json({ message: 'Hết phiên' }, { status: 401 })))
   mount()
