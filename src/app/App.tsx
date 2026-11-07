@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useAuth } from '../features/auth/AuthProvider'
+import { ChangePasswordModal } from '../features/auth/ChangePasswordModal'
 import { LoginPage } from '../features/auth/LoginPage'
 import { homePaths, roleLabels } from '../features/auth/types'
 import type { Role } from '../features/auth/types'
@@ -27,6 +28,8 @@ export function App() {
   const { user, loading, restoreError, retry, logout } = useAuth()
   const [notice, setNotice] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordNotice, setPasswordNotice] = useState('')
   useEffect(() => {
     if (loading || restoreError) return
     if (!user) window.location.hash = '/login'
@@ -34,6 +37,8 @@ export function App() {
   }, [user, loading, restoreError, path])
   async function signOut() {
     setLoggingOut(true)
+    setChangingPassword(false)
+    setPasswordNotice('')
     try { await logout(); setNotice('Bạn đã đăng xuất.') }
     catch (error: unknown) { setNotice(error instanceof ApiError && error.status === 401 ? 'Phiên đăng nhập đã kết thúc.' : 'Đã xóa phiên trên trình duyệt. Không thể xác nhận thu hồi phiên trên máy chủ; phiên sẽ hết hạn theo thời gian quy định.') }
     finally { window.location.hash = '/login'; setLoggingOut(false) }
@@ -49,7 +54,9 @@ export function App() {
       {user.role === 'EMPLOYEE' && <><a className={path === '/my-schedule' ? 'active' : ''} href="#/my-schedule">Lịch của tôi</a><button disabled>Chấm công <small>Sắp có</small></button><button disabled>Lịch rảnh <small>Sắp có</small></button></>}
       {user.role === 'ADMIN' && <><p className="nav-label">QUẢN TRỊ HỆ THỐNG</p><a className={path === '/accounts' ? 'active' : ''} href="#/accounts">Tài khoản</a><button disabled>Cài đặt <small>Sắp có</small></button></>}
     </nav><div className="sidebar-user"><span className="avatar">{user.displayName.slice(0, 1)}</span><div><strong>{user.displayName}</strong><small>{roleLabels[user.role]}</small></div></div></aside>
-    <div className="workspace-layout"><header className="topbar"><span>{roleLabels[user.role]}</span><button onClick={() => { void signOut() }} disabled={loggingOut}>{loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</button></header>
+    <div className="workspace-layout"><header className="topbar"><span>{roleLabels[user.role]}</span><div className="topbar-actions"><button type="button" onClick={() => { setPasswordNotice(''); setChangingPassword(true) }}>Đổi mật khẩu</button><button onClick={() => { void signOut() }} disabled={loggingOut}>{loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</button></div></header>
+      {passwordNotice && <p className="notice workspace-notice" role="status">{passwordNotice}</p>}
+      {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} onSaved={() => { setChangingPassword(false); setPasswordNotice('Đổi mật khẩu thành công.') }} />}
       {route?.roles.includes(user.role) ? (path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/schedules' || path === '/my-schedule' ? <SchedulePage employee={user.role === 'EMPLOYEE'} /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
     </div></div>
 }

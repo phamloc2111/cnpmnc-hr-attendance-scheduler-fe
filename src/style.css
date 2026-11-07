@@ -276,8 +276,41 @@
                                                                                                                           color:#446448;
                                                                                                                           border-radius:20px;
                                                                                                                           padding:5px 12px}
+                                                                                                                          .topbar-actions{
+                                                                                                                            display:flex;
+                                                                                                                            align-items:center;
+                                                                                                                            gap:10px}
                                                                                                                           .topbar button{
                                                                                                                             font-size:12px}
+                                                                                                                          .workspace-notice{
+                                                                                                                            margin:20px 48px 0}
+                                                                                                                          .modal{
+                                                                                                                            width:min(660px,calc(100vw - 32px));
+                                                                                                                            max-height:90dvh;
+                                                                                                                            border:1px solid #dce5db;
+                                                                                                                            border-radius:18px;
+                                                                                                                            padding:28px;
+                                                                                                                            color:#20352f;
+                                                                                                                            box-shadow:0 24px 80px #132e3029}
+                                                                                                                          .modal::backdrop{
+                                                                                                                            background:#102c286e}
+                                                                                                                          .modal-header{
+                                                                                                                            display:flex;
+                                                                                                                            align-items:center;
+                                                                                                                            justify-content:space-between;
+                                                                                                                            gap:16px}
+                                                                                                                          .modal-header h2{
+                                                                                                                            font-size:23px;
+                                                                                                                            margin:0}
+                                                                                                                          .modal-header button{
+                                                                                                                            border:0;
+                                                                                                                            font-size:24px;
+                                                                                                                            padding:0 10px}
+                                                                                                                          .modal-actions{
+                                                                                                                            display:flex;
+                                                                                                                            justify-content:flex-end;
+                                                                                                                            gap:12px;
+                                                                                                                            margin-top:26px}
                                                                                                                             .workspace{
                                                                                                                               padding:60px 48px;
                                                                                                                               max-width:1100px}
