@@ -21,6 +21,7 @@ function mockApi(role: Role, override?: (path: string, init?: RequestInit) => Re
     if (response) return response
     if (path.endsWith('/auth/login')) return json({ accessToken: 'test-token', expiresAt: future(), tokenType: 'Bearer', user: userFor(role) })
     if (path.endsWith('/auth/me')) return json(userFor(role))
+    if (path.includes('/work-schedules?')) return json({ items: [], page: 0, totalPages: 0, totalElements: 0 })
     if (path.endsWith('/auth/logout')) return new Response(null, { status: 204 })
     if (path.endsWith('/auth/change-password')) return new Response(null, { status: 204 })
     return json({ title: 'Không gian làm việc', description: 'Chào mừng bạn' })
