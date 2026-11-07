@@ -16,6 +16,7 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
   const [email, setEmail] = useState(account?.email ?? '')
   const [displayName, setDisplayName] = useState(account?.displayName ?? '')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState<Role>(account?.role ?? 'EMPLOYEE')
   const [position, setPosition] = useState(account?.positionId ?? '')
   const [skillsText, setSkillsText] = useState(account?.skills.join(', ') ?? '')
@@ -62,7 +63,24 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
         <div><label htmlFor="account-email">Email</label>
           <input id="account-email" type="email" autoComplete="off" required maxLength={254} value={email} disabled={busy} onChange={event => setEmail(event.target.value)} /></div>
         {!account && <div className="full-width"><label htmlFor="account-password">Mật khẩu ban đầu</label>
-          <input id="account-password" type="password" autoComplete="new-password" required minLength={12} maxLength={72} value={password} disabled={busy} onChange={event => setPassword(event.target.value)} />
+          <div className="password-field">
+            <input id="account-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required minLength={12} maxLength={72} value={password} disabled={busy} onChange={event => setPassword(event.target.value)} />
+            <button type="button" className="text-button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ẩn mật khẩu ban đầu' : 'Hiện mật khẩu ban đầu'} title={showPassword ? 'Ẩn mật khẩu ban đầu' : 'Hiện mật khẩu ban đầu'}>
+              {showPassword ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
           <small className="muted">Ít nhất 12 ký tự, tối đa 72 byte UTF-8. Cấp riêng cho người nhận.</small></div>}
         {isAdmin && <div><label htmlFor="account-role">Vai trò</label>
           <select id="account-role" value={role} disabled={busy || isSelf}

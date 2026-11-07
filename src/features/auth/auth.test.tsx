@@ -141,8 +141,16 @@ describe('SS-14 đổi mật khẩu', () => {
     await screen.findByText('Xin chào, Nguyễn An.')
     fireEvent.click(screen.getByRole('button', { name: 'Đổi mật khẩu' }))
     const dialog = await screen.findByRole('dialog', { name: 'Đổi mật khẩu' })
-    fireEvent.change(within(dialog).getByLabelText('Mật khẩu cũ'), { target: { value: 'OldPass123!' } })
-    fireEvent.change(within(dialog).getByLabelText('Mật khẩu mới'), { target: { value: 'NewPass8' } })
+    const currentInput = within(dialog).getByLabelText('Mật khẩu cũ') as HTMLInputElement
+    const newInput = within(dialog).getByLabelText('Mật khẩu mới') as HTMLInputElement
+    expect(currentInput.type).toBe('password')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Hiện mật khẩu cũ' }))
+    expect(currentInput.type).toBe('text')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ẩn mật khẩu cũ' }))
+    expect(currentInput.type).toBe('password')
+
+    fireEvent.change(currentInput, { target: { value: 'OldPass123!' } })
+    fireEvent.change(newInput, { target: { value: 'NewPass8' } })
     fireEvent.change(within(dialog).getByLabelText('Xác nhận mật khẩu mới'), { target: { value: 'NewPass8' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
 
