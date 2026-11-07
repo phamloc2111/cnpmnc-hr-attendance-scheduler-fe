@@ -28,8 +28,9 @@ async function allSchedules(from: string, to: string) {
   return [first, ...pages].flatMap(page => page.items)
 }
 
-export function AttendancePage() {
-  const [week, setWeek] = useState(() => monday(vietnamToday()))
+export function AttendancePage({ initialDate, preferredScheduleId }: { initialDate?: string; preferredScheduleId?: string }) {
+  const [week, setWeek] = useState(() => monday(initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate) &&
+    !Number.isNaN(Date.parse(initialDate + 'T00:00:00Z')) ? initialDate : vietnamToday()))
   const [schedules, setSchedules] = useState<WorkSchedule[] | null>(null)
   const [events, setEvents] = useState<AttendanceEvent[]>([])
   const [file, setFile] = useState<{ scheduleId: string; image: File } | null>(null)
@@ -73,7 +74,8 @@ export function AttendancePage() {
     </div>
     {!schedules ? !error && <p role="status">Đang tải lịch điểm danh…</p>
       : schedules.length === 0 ? <section className="account-card attendance-empty"><h2>Chưa có ca làm trong tuần này</h2><p>Ca được phân sẽ xuất hiện tại đây.</p></section>
-      : <div className="attendance-grid">{schedules.map(schedule => {
+      : <div className="attendance-grid">{[...schedules].sort((a, b) =>
+        Number(b.id === preferredScheduleId) - Number(a.id === preferredScheduleId)).map(schedule => {
         const checkIn = events.find(event => event.scheduleId === schedule.id && event.type === 'CHECK_IN')
         const checkOut = events.find(event => event.scheduleId === schedule.id && event.type === 'CHECK_OUT')
         const type = checkIn ? 'CHECK_OUT' : 'CHECK_IN'

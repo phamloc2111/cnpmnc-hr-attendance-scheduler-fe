@@ -1,0 +1,34 @@
+.workspace.employee-home { max-width:1000px; padding-bottom:160px; }
+.employee-home h1 { font-size:clamp(28px,4vw,40px); overflow-wrap:anywhere; }
+.home-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:32px; }
+.home-heading h2 { font-size:23px; margin:0; }
+.today-shifts { display:grid; gap:16px; padding:0; list-style:none; }
+.today-shift,.home-state,.home-install { padding:24px; background:#fff; border:1px solid #dde5df; border-radius:18px; }
+.today-shift.selected { border:2px solid #245d49; background:#f2f8f3; }
+.today-shift h3 { margin:12px 0 8px; font-size:23px; }
+.today-shift p { margin-bottom:10px; overflow-wrap:anywhere; }
+.today-shift small,.home-install p { color:#687a70; }
+.shift-state { color:#245d49; font-size:12px; font-weight:700; }
+.shift-choice { display:flex; align-items:center; gap:10px; margin-top:18px; cursor:pointer; }
+.shift-choice input { width:20px; height:20px; flex-shrink:0; accent-color:#245d49; }
+.home-week-link { display:inline-block; padding:12px 0; color:#245d49; font-weight:650; }
+.home-install { margin-top:16px; font-size:14px; }
+.home-install h3 { margin-top:0; }
+.home-install p { margin-bottom:0; }
+.attendance-dock { position:fixed; z-index:10; left:260px; right:0; bottom:0; padding:12px 24px calc(12px + env(safe-area-inset-bottom)); background:#fffffff5; border-top:1px solid #dde5df; box-shadow:0 -5px 24px #20352f08; }
+.attendance-dock > div { display:flex; align-items:center; gap:16px; max-width:900px; margin:0 auto; }
+.attendance-dock small { flex:1; color:#687a70; overflow-wrap:anywhere; }
+.attendance-dock button { min-height:52px; min-width:180px; font-size:17px; }
+@media(max-width:850px) {
+  .employee-shell .sidebar { display:none; }
+  .employee-shell .workspace-layout { min-width:0; }
+  .employee-shell .topbar { padding:12px 16px; height:auto; min-height:65px; gap:10px; flex-wrap:wrap; }
+  .employee-shell .topbar-actions { display:flex; gap:6px; }
+  .employee-shell .topbar button { padding:8px 10px; font-size:13px; }
+  .workspace.employee-home { padding:28px 16px 160px; }
+  .attendance-dock { left:0; padding-left:16px; padding-right:16px; }
+  .attendance-dock > div { flex-direction:column; align-items:stretch; gap:6px; }
+  .attendance-dock small { text-align:center; font-size:12px; }
+  .home-heading { align-items:flex-start; }
+  .today-shift,.home-state,.home-install { padding:20px; }
+}
