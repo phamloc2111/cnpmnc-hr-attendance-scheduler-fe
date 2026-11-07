@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../../app/App'
 import { AuthProvider } from './AuthProvider'
 import { saveSession } from '../../shared/api/client'
@@ -14,19 +14,28 @@ function fillLogin() {
   fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'password-123' } })
   fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập →' }))
 }
-function mockApi(role: Role, override?: (path: string) => Response | undefined) {
-  const fn = vi.fn(async (url: string | URL | Request) => {
+function mockApi(role: Role, override?: (path: string, init?: RequestInit) => Response | undefined) {
+  const fn = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
     const path = String(url)
-    const response = override?.(path)
+    const response = override?.(path, init)
     if (response) return response
     if (path.endsWith('/auth/login')) return json({ accessToken: 'test-token', expiresAt: future(), tokenType: 'Bearer', user: userFor(role) })
     if (path.endsWith('/auth/me')) return json(userFor(role))
     if (path.endsWith('/auth/logout')) return new Response(null, { status: 204 })
+    if (path.endsWith('/auth/change-password')) return new Response(null, { status: 204 })
     return json({ title: 'Không gian làm việc', description: 'Chào mừng bạn' })
   })
   vi.stubGlobal('fetch', fn)
   return fn
 }
+beforeAll(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true, value(this: HTMLDialogElement) { this.open = true },
+  })
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true, value(this: HTMLDialogElement) { this.open = false },
+  })
+})
 beforeEach(() => { sessionStorage.clear(); window.location.hash = '/login'; vi.unstubAllGlobals() })
 
 describe('SS-12 đăng nhập và đăng xuất', () => {
@@ -121,5 +130,70 @@ describe('SS-13 phân quyền', () => {
     expect(sessionStorage.getItem('shiftsync.session')).not.toBeNull()
     await act(async () => { window.location.hash = '/administration'; window.dispatchEvent(new HashChangeEvent('hashchange')) })
     await waitFor(() => expect(screen.getByRole('heading')).toHaveTextContent('Bạn không có quyền truy cập'))
+  })
+})
+
+describe('SS-14 đổi mật khẩu', () => {
+  it('nhập đúng mật khẩu cũ và mật khẩu mới từ 8 ký tự, bấm Lưu thì đổi thành công', async () => {
+    saveSession({ accessToken: 'test-token', expiresAt: future() })
+    const fetcher = mockApi('EMPLOYEE')
+    mount()
+    await screen.findByText('Xin chào, Nguyễn An.')
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi mật khẩu' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Đổi mật khẩu' })
+    const currentInput = within(dialog).getByLabelText('Mật khẩu cũ') as HTMLInputElement
+    const newInput = within(dialog).getByLabelText('Mật khẩu mới') as HTMLInputElement
+    expect(currentInput.type).toBe('password')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Hiện mật khẩu cũ' }))
+    expect(currentInput.type).toBe('text')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ẩn mật khẩu cũ' }))
+    expect(currentInput.type).toBe('password')
+
+    fireEvent.change(currentInput, { target: { value: 'OldPass123!' } })
+    fireEvent.change(newInput, { target: { value: 'NewPass8' } })
+    fireEvent.change(within(dialog).getByLabelText('Xác nhận mật khẩu mới'), { target: { value: 'NewPass8' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Đổi mật khẩu thành công.')
+    expect(screen.queryByRole('dialog', { name: 'Đổi mật khẩu' })).toBeNull()
+    const changeCall = fetcher.mock.calls.find(call => String(call[0]).endsWith('/auth/change-password'))
+    expect(changeCall).toBeDefined()
+    expect(JSON.parse(String((changeCall?.[1] as RequestInit | undefined)?.body))).toEqual({
+      currentPassword: 'OldPass123!',
+      newPassword: 'NewPass8',
+    })
+  })
+
+  it('nhập mật khẩu cũ sai thì báo lỗi và không đóng form', async () => {
+    saveSession({ accessToken: 'test-token', expiresAt: future() })
+    mockApi('EMPLOYEE', path => path.endsWith('/auth/change-password')
+      ? json({ code: 'INVALID_CURRENT_PASSWORD', message: 'Mật khẩu cũ không đúng' }, 400)
+      : undefined)
+    mount()
+    await screen.findByText('Xin chào, Nguyễn An.')
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi mật khẩu' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Đổi mật khẩu' })
+    fireEvent.change(within(dialog).getByLabelText('Mật khẩu cũ'), { target: { value: 'WrongOld!' } })
+    fireEvent.change(within(dialog).getByLabelText('Mật khẩu mới'), { target: { value: 'NewPass8' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Mật khẩu cũ không đúng')
+    expect(screen.getByRole('dialog', { name: 'Đổi mật khẩu' })).toBeInTheDocument()
+    expect(sessionStorage.getItem('shiftsync.session')).not.toBeNull()
+  })
+
+  it('chặn mật khẩu mới dưới 8 ký tự trước khi gọi API', async () => {
+    saveSession({ accessToken: 'test-token', expiresAt: future() })
+    const fetcher = mockApi('EMPLOYEE')
+    mount()
+    await screen.findByText('Xin chào, Nguyễn An.')
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi mật khẩu' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Đổi mật khẩu' })
+    fireEvent.change(within(dialog).getByLabelText('Mật khẩu cũ'), { target: { value: 'OldPass123!' } })
+    fireEvent.change(within(dialog).getByLabelText('Mật khẩu mới'), { target: { value: 'Short7!' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Mật khẩu mới phải có ít nhất 8 ký tự')
+    expect(fetcher.mock.calls.some(call => String(call[0]).endsWith('/auth/change-password'))).toBe(false)
   })
 })

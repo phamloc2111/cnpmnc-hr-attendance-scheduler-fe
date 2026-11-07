@@ -7,6 +7,7 @@ type AuthState = {
   user: User | null; loading: boolean; restoreError: string
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>; retry: () => void
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
 }
 const AuthContext = createContext<AuthState | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -47,7 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await request<void>('/auth/logout', { method: 'POST' }) }
     finally { clearSession() }
   }, [])
-  return <AuthContext.Provider value={{ user, loading, restoreError, login, logout, retry: () => setAttempt(value => value + 1) }}>{children}</AuthContext.Provider>
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await request<void>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  }, [])
+  return <AuthContext.Provider value={{ user, loading, restoreError, login, logout, changePassword, retry: () => setAttempt(value => value + 1) }}>{children}</AuthContext.Provider>
 }
 export function useAuth() {
   const state = useContext(AuthContext)
