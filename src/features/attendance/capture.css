@@ -1,0 +1,18 @@
+.capture-attendance h3 { margin:0 0 8px; color:#10213f; }
+.capture-attendance > p { font-size:13px; color:#60708b; line-height:1.6; }
+.capture-attendance video { display:block; width:100%; aspect-ratio:4/3; max-height:45vh; object-fit:cover; background:#10213f; border-radius:16px; }
+.capture-attendance p[role=alert] { color:#b42318; padding:12px; background:#fff1ef; border-radius:10px; }
+.capture-attendance .modal-actions { flex-wrap:wrap; }
+.attendance-results-page .attendance-result-list { display:grid; gap:14px; }
+.attendance-result-card { display:grid; grid-template-columns:minmax(150px,1.2fr) repeat(3,minmax(120px,1fr)); gap:16px; padding:20px; border:1px solid #e2e8f0; border-radius:16px; background:white; }
+.attendance-result-card h2 { margin:0 0 8px; font-size:16px; }
+.attendance-result-card p { margin:6px 0; font-size:13px; overflow-wrap:anywhere; }
+.attendance-result-card small { color:#64748b; font-size:12px; }
+.attendance-result-card h3 { margin:0 0 8px; font-size:12px; color:#64748b; }
+.attendance-result-card .attendance-badge { margin-bottom:5px; }
+.attendance-page-links { display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 20px; }
+.attendance-page-links a { color:#0758c9; font-weight:650; font-size:13px; }
+@media(max-width:700px) { .attendance-result-card { grid-template-columns:1fr 1fr; gap:15px; padding:16px; } .attendance-result-card > div:first-child { grid-column:1/-1; } }
+
+.attendance-results-page > .account-card { padding:20px; }
+@media(max-width:700px) { .attendance-results-page > .account-card { padding:14px; } }

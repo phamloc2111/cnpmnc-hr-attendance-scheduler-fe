@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { AttendancePhoto } from './AttendancePhoto'
 import { Modal } from '../../shared/components/Modal'
 import { dateLabel, instantLabel } from '../../shared/utils/dates'
 import { listAccounts } from '../accounts'
@@ -21,6 +22,7 @@ import {
   type RegisteredDevice,
 } from './types'
 import './attendance.css'
+import './capture.css'
 
 function formatCoordinates(record: AttendanceRecord) {
   if (record.deviceLatitude === null || record.deviceLongitude === null) return null
@@ -94,6 +96,7 @@ export function AttendancePage() {
         </div>
       )}
 
+      <nav className="attendance-page-links" aria-label="Xem bảng công"><a href="#/attendance" aria-current="page">Lượt điểm danh và ảnh</a><a href="#/attendance-results">Phân loại ca làm</a></nav>
       <section className="account-card">
         <div className="attendance-filters" role="search" aria-label="Bộ lọc lượt điểm danh">
           <div>
@@ -205,7 +208,7 @@ export function AttendancePage() {
                             onClick={() => setSelected(record)}
                             aria-label={'Xem ảnh điểm danh của ' + record.employeeName}
                           >
-                            <img
+                            <AttendancePhoto
                               className="attendance-photo-thumb"
                               src={record.photoUrl}
                               alt={'Ảnh điểm danh ' + record.employeeName}
@@ -280,7 +283,7 @@ export function AttendancePage() {
       {selected && (
         <Modal title="Chi tiết lượt điểm danh" busy={false} onClose={() => setSelected(null)}>
           <div className="attendance-detail-grid">
-            <img
+            <AttendancePhoto
               className="attendance-detail-image"
               src={selected.photoUrl}
               alt={'Ảnh Timemark của ' + selected.employeeName}

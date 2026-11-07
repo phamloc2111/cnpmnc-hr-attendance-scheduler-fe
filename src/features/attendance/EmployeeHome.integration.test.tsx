@@ -20,6 +20,7 @@ let requests: URLSearchParams[] = []
 let role = 'EMPLOYEE'
 let now = Date.parse('2026-11-09T00:30:00Z')
 const server = setupServer(
+  http.get(base + '/attendance/events', () => HttpResponse.json([])),
   http.get(base + '/auth/me', () => HttpResponse.json({ id: 'employee', email: 'an@example.com', displayName: 'Nguyễn An', role })),
   http.get(base + '/work-schedules', ({ request }) => {
     requests.push(new URL(request.url).searchParams)
@@ -52,14 +53,15 @@ it('shows the assigned shift with Vietnamese date, Vietnam time and position', a
   expect(screen.getByRole('link', { name: 'Xem lịch của tôi →' })).toHaveAttribute('href', '#/my-schedule')
 })
 
-it('opens attendance preparation for the selected shift without pretending to record attendance', async () => {
+it('opens direct camera attendance for the selected shift without recording without a photo', async () => {
   rows = [row, { ...row, id: 'shift-2', shiftName: 'Ca chiều', startsAt: '2026-11-09T06:00:00Z', endsAt: '2026-11-09T10:00:00Z' }]
   mount(); const user = userEvent.setup()
   await user.click(await screen.findByRole('radio', { name: 'Chọn Ca chiều để điểm danh' }))
   await user.click(screen.getByRole('button', { name: 'Điểm danh' }))
   const dialog = within(screen.getByRole('dialog', { name: 'Điểm danh ca làm' }))
-  expect(dialog.getByText('Ca chiều')).toBeInTheDocument()
-  expect(dialog.getByText(/Hiện chưa có lượt điểm danh nào được ghi nhận/)).toBeInTheDocument()
+  expect(dialog.getByText('Ca chiều · Vào ca')).toBeInTheDocument()
+  expect(dialog.getByRole('button', { name: 'Chụp và điểm danh vào' })).toBeDisabled()
+  expect(dialog.getByText(/không mở được camera/i)).toBeInTheDocument()
 })
 
 it('keeps the attendance action visible but disabled when no shift exists', async () => {
@@ -226,4 +228,26 @@ it('uses the browser install prompt when it is available', async () => {
   await userEvent.setup().click(screen.getByRole('button', { name: 'Thêm vào màn hình chính' }))
   await waitFor(() => expect(prompt).toHaveBeenCalledOnce())
   await waitFor(() => expect(screen.queryByText('Mở ShiftSync nhanh hơn')).not.toBeInTheDocument())
+})
+
+it('allows checkout after shift end when a check-in exists', async () => {
+  now = Date.parse('2026-11-09T05:00:00Z')
+  server.use(http.get(base + '/attendance/events', () => HttpResponse.json([{ id: 'in', scheduleId: row.id, type: 'CHECK_IN', receivedAt: row.startsAt }])))
+  mount()
+  expect(await screen.findByText('Chấm công ra ca')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Điểm danh' })).toBeEnabled()
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Điểm danh' }))
+  expect(within(screen.getByRole('dialog')).getByText('Ca sáng · Ra ca')).toBeInTheDocument()
+})
+it('does not offer a second checkout for a completed shift', async () => {
+  server.use(http.get(base + '/attendance/events', () => HttpResponse.json([{ id: 'in', scheduleId: row.id, type: 'CHECK_IN' }, { id: 'out', scheduleId: row.id, type: 'CHECK_OUT' }])))
+  mount()
+  expect(await screen.findByText('Đã hoàn tất điểm danh')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Điểm danh' })).toBeDisabled()
+})
+it('blocks submission until attendance state can be loaded instead of guessing the event type', async () => {
+  server.use(http.get(base + '/attendance/events', () => HttpResponse.json({ message: 'Không tải được lượt vào/ra' }, { status: 503 })))
+  mount()
+  expect(await screen.findByText('Không tải được lượt vào/ra')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Điểm danh' })).toBeDisabled()
 })
