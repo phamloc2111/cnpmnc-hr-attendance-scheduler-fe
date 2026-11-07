@@ -28,7 +28,7 @@ export async function request<T>(path: string, options: RequestInit = {}, anonym
   const headers = new Headers(options.headers)
   const session = anonymous ? null : readSession()
   if (session) headers.set('Authorization', 'Bearer ' + session.accessToken)
-  if (options.body) headers.set('Content-Type', 'application/json')
+  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   let response: Response
   try { response = await fetch(apiBaseUrl + '/api/v1' + path, { ...options, headers, cache: 'no-store' }) }
   catch { throw new ApiError(0, 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại.') }

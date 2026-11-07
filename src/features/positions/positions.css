@@ -1,0 +1,6 @@
+.position-create { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; margin-bottom:24px; }
+.position-create > div { flex:1; min-width:200px; }
+.position-create label { margin-top:0; }
+.position-create button { min-height:49px; }
+.position-paging { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; }
+.position-paging button { padding:5px 8px; font-size:11px; }

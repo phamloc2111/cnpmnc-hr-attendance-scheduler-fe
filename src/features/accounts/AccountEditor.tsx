@@ -5,6 +5,7 @@ import { roleLabels } from '../auth'
 import type { Role, User } from '../auth'
 import { createAccount, updateAccount } from './api'
 import { ManagerSelect } from './ManagerSelect'
+import { PositionSelect } from '../positions'
 import type { Account, AccountDetails } from './types'
 
 export function AccountEditor({ actor, account, onClose, onSaved }: {
@@ -15,8 +16,9 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
   const [email, setEmail] = useState(account?.email ?? '')
   const [displayName, setDisplayName] = useState(account?.displayName ?? '')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState<Role>(account?.role ?? 'EMPLOYEE')
-  const [position, setPosition] = useState(account?.position ?? '')
+  const [position, setPosition] = useState(account?.positionId ?? '')
   const [skillsText, setSkillsText] = useState(account?.skills.join(', ') ?? '')
   const [managerId, setManagerId] = useState(account?.managerId ?? '')
   const [busy, setBusy] = useState(false)
@@ -39,7 +41,7 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
     }
     const details: AccountDetails = {
       email: email.trim(), displayName: displayName.trim(), role,
-      position: role === 'EMPLOYEE' ? position.trim() || null : null, skills,
+      positionId: role === 'EMPLOYEE' ? position || null : null, skills,
       managerId: isAdmin && role === 'EMPLOYEE' ? managerId || null : null,
     }
     setBusy(true)
@@ -61,15 +63,31 @@ export function AccountEditor({ actor, account, onClose, onSaved }: {
         <div><label htmlFor="account-email">Email</label>
           <input id="account-email" type="email" autoComplete="off" required maxLength={254} value={email} disabled={busy} onChange={event => setEmail(event.target.value)} /></div>
         {!account && <div className="full-width"><label htmlFor="account-password">Mật khẩu ban đầu</label>
-          <input id="account-password" type="password" autoComplete="new-password" required minLength={12} maxLength={72} value={password} disabled={busy} onChange={event => setPassword(event.target.value)} />
+          <div className="password-field">
+            <input id="account-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required minLength={12} maxLength={72} value={password} disabled={busy} onChange={event => setPassword(event.target.value)} />
+            <button type="button" className="text-button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ẩn mật khẩu ban đầu' : 'Hiện mật khẩu ban đầu'} title={showPassword ? 'Ẩn mật khẩu ban đầu' : 'Hiện mật khẩu ban đầu'}>
+              {showPassword ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
           <small className="muted">Ít nhất 12 ký tự, tối đa 72 byte UTF-8. Cấp riêng cho người nhận.</small></div>}
         {isAdmin && <div><label htmlFor="account-role">Vai trò</label>
           <select id="account-role" value={role} disabled={busy || isSelf}
             onChange={event => { setRole(event.target.value as Role); setManagerId(''); setPosition(''); setSkillsText('') }}>
             {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>{isSelf && <small className="muted">Không thể tự đổi vai trò.</small>}</div>}
-        {role === 'EMPLOYEE' && <><div><label htmlFor="account-position">Vị trí</label>
-          <input id="account-position" maxLength={120} value={position} disabled={busy} onChange={event => setPosition(event.target.value)} placeholder="Ví dụ: Thu ngân" /></div>
+        {role === 'EMPLOYEE' && <><PositionSelect id="account-position" label="Vị trí" value={position} currentId={account?.positionId} disabled={busy} onChange={setPosition} />
         <div className="full-width"><label htmlFor="account-skills">Kỹ năng</label>
           <textarea id="account-skills" rows={2} maxLength={1700} value={skillsText} disabled={busy} onChange={event => setSkillsText(event.target.value)} placeholder="Ví dụ: Thu ngân, Pha chế" />
           <small className="muted">Phân tách bằng dấu phẩy. Tối đa 20 kỹ năng.</small></div></>}
