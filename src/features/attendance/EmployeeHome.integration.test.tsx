@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
@@ -24,6 +24,7 @@ const server = setupServer(
     requests.push(new URL(request.url).searchParams)
     return HttpResponse.json({ items: rows, page: 0, totalPages: rows.length ? 1 : 0, totalElements: rows.length })
   }),
+  http.get(base + '/attendance/events', () => HttpResponse.json([])),
 )
 beforeAll(() => {
   server.listen({ onUnhandledFrame: 'error' })
@@ -51,14 +52,14 @@ it('shows the assigned shift with Vietnamese date, Vietnam time and position', a
   expect(screen.getByRole('link', { name: 'Xem lịch của tôi →' })).toHaveAttribute('href', '#/my-schedule')
 })
 
-it('opens attendance preparation for the selected shift without pretending to record attendance', async () => {
+it('opens the real attendance flow for the selected shift', async () => {
   rows = [row, { ...row, id: 'shift-2', shiftName: 'Ca chiều', startsAt: '2026-11-09T06:00:00Z', endsAt: '2026-11-09T10:00:00Z' }]
   mount(); const user = userEvent.setup()
   await user.click(await screen.findByRole('radio', { name: 'Chọn Ca chiều để điểm danh' }))
   await user.click(screen.getByRole('button', { name: 'Điểm danh' }))
-  const dialog = within(screen.getByRole('dialog', { name: 'Điểm danh ca làm' }))
-  expect(dialog.getByText('Ca chiều')).toBeInTheDocument()
-  expect(dialog.getByText(/Hiện chưa có lượt điểm danh nào được ghi nhận/)).toBeInTheDocument()
+  expect(window.location.hash).toBe('#/attendance?date=2026-11-09&schedule=shift-2')
+  expect(await screen.findByRole('heading', { name: 'Chấm công bằng ảnh Timemark' })).toBeInTheDocument()
+  expect(screen.getAllByRole('heading', { level: 2 })[0]).toHaveTextContent('Ca chiều')
 })
 
 it('keeps the attendance action visible but disabled when no shift exists', async () => {

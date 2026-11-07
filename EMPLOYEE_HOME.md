@@ -2,9 +2,9 @@
 
 Đăng nhập bằng Nhân viên: trang chủ `/#/employee` hiển thị ca hôm nay theo giờ Việt Nam, ngày làm việc, khung giờ, vị trí, thời gian nghỉ và số phút làm. Dữ liệu lấy từ phân ca thủ công hiện có, không cần thuật toán xếp lịch tự động. API lịch backend bổ sung `requiredPosition` (nullable cho ca cũ).
 
-Nút **Điểm danh** cố định cuối màn hình, có chừa khoảng trống và safe area. Khi có nhiều ca, chọn ca trước khi mở bảng chuẩn bị ảnh Timemark. Ca đã kết thúc không được chọn. Nút vẫn hiển thị nhưng bị khóa khi đang tải, lỗi hoặc chưa có ca. Ca đêm từ hôm trước còn diễn ra vẫn được hiển thị. Dữ liệu tải đủ trang từ hôm trước đến hôm nay; tải lại khi quay về tab và đổi ngày theo Asia/Ho_Chi_Minh.
+Nút **Điểm danh** cố định cuối màn hình, có chừa khoảng trống và safe area. Khi có nhiều ca, chọn ca trước khi mở trang chấm công bằng ảnh Timemark; ca đã chọn được đưa lên đầu danh sách, kể cả ca đêm bắt đầu từ tuần trước. Ca đã kết thúc không được chọn. Nút vẫn hiển thị nhưng bị khóa khi đang tải, lỗi hoặc chưa có ca. Ca đêm từ hôm trước còn diễn ra vẫn được hiển thị. Dữ liệu tải đủ trang từ hôm trước đến hôm nay; tải lại khi quay về tab và đổi ngày theo Asia/Ho_Chi_Minh.
 
-**Phạm vi:** SYNC-18 xây dựng màn hình và điểm vào luồng điểm danh. Gửi ảnh/ghi nhận điểm danh thuộc SYNC-19; hiện bảng chuẩn bị thông báo rõ chưa ghi nhận lượt điểm danh. Không có API ghi điểm danh hoặc dữ liệu ca giả trên môi trường thật.
+**Phạm vi:** SYNC-18 xây dựng màn hình và điểm vào luồng điểm danh; SYNC-19 đã nối nút này tới trang gửi ảnh và ghi nhận điểm danh thật. Xem tài liệu `ATTENDANCE.md` ở repo backend để biết quy tắc API và phân loại SYNC-22.
 
 ## Kiểm thử mẫu
 
@@ -27,6 +27,6 @@ Service worker chỉ cache trang mất kết nối chung; không cache token, AP
 
 - Web: 75 test đạt; 13 test riêng cho trang chủ, trạng thái dữ liệu, ca đêm, phân trang, đổi ngày, phân quyền và cài đặt. Build TypeScript/Vite thành công.
 - Backend: 106 test đạt, không lỗi hoặc bỏ qua; gồm 2 test mới xác nhận vị trí ca và quyền xem lịch riêng của nhân viên. PostgreSQL Testcontainers độc lập.
-- Chrome headless với API mẫu: đạt ở 360/390/768/1280px; không tràn ngang, nút cao 52px luôn thấy ở cuối màn hình, không che phần nội dung cuối khi cuộn hết. Mở bảng chuẩn bị điểm danh thành công.
+- Chrome headless với API mẫu: đạt ở 360/390/768/1280px; không tràn ngang, nút cao 52px luôn thấy ở cuối màn hình, không che phần nội dung cuối khi cuộn hết. Kết quả này được ghi trước khi nút được nối tới trang Chấm công của SYNC-19.
 - Chrome không báo lỗi installability của manifest. Giả lập mất mạng cho cả trang và service worker hiển thị đúng trang offline; không cache API đăng nhập/lịch và không có lỗi runtime. Đây là kiểm tra trình duyệt, chưa thay thế kiểm tra cài đặt trên thiết bị thật.
 - Repo Flutter không có thay đổi trong chức năng này.

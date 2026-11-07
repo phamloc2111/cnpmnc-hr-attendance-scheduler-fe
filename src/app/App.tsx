@@ -29,7 +29,9 @@ function subscribe(listener: () => void) {
   return () => window.removeEventListener('hashchange', listener)
 }
 export function App() {
-  const path = useSyncExternalStore(subscribe, () => window.location.hash.slice(1) || '/')
+  const location = useSyncExternalStore(subscribe, () => window.location.hash.slice(1) || '/')
+  const [path, search = ''] = location.split('?', 2)
+  const attendanceParams = new URLSearchParams(search)
   const { user, loading, restoreError, retry, logout } = useAuth()
   const [notice, setNotice] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
@@ -62,7 +64,7 @@ export function App() {
     <div className="workspace-layout"><header className="topbar"><span>{user.role === 'EMPLOYEE' ? <a href="#/employee" aria-label="Trang chủ ShiftSync">ShiftSync</a> : roleLabels[user.role]}</span><div className="topbar-actions"><button type="button" onClick={() => { setPasswordNotice(''); setChangingPassword(true) }}>Đổi mật khẩu</button><button onClick={() => { void signOut() }} disabled={loggingOut}>{loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</button></div></header>
       {passwordNotice && <p className="notice workspace-notice" role="status">{passwordNotice}</p>}
       {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} onSaved={() => { setChangingPassword(false); setPasswordNotice('Đổi mật khẩu thành công.') }} />}
-      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome name={user.displayName} /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/schedules' || path === '/my-schedule' ? <SchedulePage employee={user.role === 'EMPLOYEE'} /> : path === '/attendance' ? <AttendancePage /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
+      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome name={user.displayName} /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/schedules' || path === '/my-schedule' ? <SchedulePage employee={user.role === 'EMPLOYEE'} /> : path === '/attendance' ? <AttendancePage initialDate={attendanceParams.get('date') ?? undefined} preferredScheduleId={attendanceParams.get('schedule') ?? undefined} /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
     </div></div>
 }
 function Workspace({ endpoint, name }: { endpoint: string; name: string }) {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Modal } from '../../shared/components/Modal'
 import { vietnamToday } from '../../shared/utils/dates'
 import type { WorkSchedule } from '../schedule'
 import { InstallApp } from './InstallApp'
@@ -13,17 +12,16 @@ export function EmployeeHome({ name }: { name: string }) {
   const [error, setError] = useState('')
   const [revision, refresh] = useState(0)
   const [selectedId, select] = useState('')
-  const [attendance, setAttendance] = useState<WorkSchedule | null>(null)
   useEffect(() => {
     const tick = () => { setClock(Date.now()); setToday(vietnamToday()) }
-    const resume = () => { if (document.visibilityState === 'visible') { tick(); refresh(value => value + 1); setAttendance(null) } }
+    const resume = () => { if (document.visibilityState === 'visible') { tick(); refresh(value => value + 1) } }
     const timer = window.setInterval(tick, 30000)
     window.addEventListener('focus', resume); document.addEventListener('visibilitychange', resume)
     return () => { clearInterval(timer); window.removeEventListener('focus', resume); document.removeEventListener('visibilitychange', resume) }
   }, [])
   useEffect(() => {
     let active = true
-    setData(null); setError(''); setAttendance(null)
+    setData(null); setError('')
     loadHomeSchedules(today).then(items => { if (active) setData(items) })
       .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Không tải được ca hôm nay.') })
     return () => { active = false }
@@ -51,12 +49,7 @@ export function EmployeeHome({ name }: { name: string }) {
     <a className="home-week-link" href="#/my-schedule">Xem lịch của tôi →</a>
     <InstallApp />
     <div className="attendance-dock"><div><small>{selected ? selected.shiftName : error ? 'Tải lại ca để tiếp tục' : !data ? 'Đang tải ca làm' : 'Chưa có ca có thể điểm danh'}</small>
-      <button className="primary" disabled={!selected || !data || !!error} onClick={() => selected && setAttendance(selected)}>Điểm danh</button></div></div>
-    {attendance && <Modal title="Điểm danh ca làm" busy={false} onClose={() => setAttendance(null)}>
-      <h3>{attendance.shiftName}</h3><p>{shiftSummary(attendance)}</p>
-      <p>Chuẩn bị ảnh Timemark hiển thị rõ thời gian và vị trí tại điểm làm việc.</p>
-      <p className="muted">Tính năng gửi ảnh điểm danh sẽ sớm được mở. Hiện chưa có lượt điểm danh nào được ghi nhận.</p>
-      <div className="modal-actions"><button onClick={() => setAttendance(null)}>Đóng</button></div>
-    </Modal>}
+      <button className="primary" disabled={!selected || !data || !!error}
+        onClick={() => { if (selected) window.location.hash = '/attendance?date=' + selected.workDate + '&schedule=' + selected.id }}>Điểm danh</button></div></div>
   </main>
 }
