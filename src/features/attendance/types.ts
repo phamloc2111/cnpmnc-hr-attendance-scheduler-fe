@@ -71,3 +71,19 @@ export const fraudTypeLabels: Record<FraudType, string> = {
   FAKE_LOCATION: 'Cảnh báo: Định vị giả',
   UNREGISTERED_DEVICE: 'Từ chối: Thiết bị lạ',
 }
+
+export type AttendanceEvent = {
+  id: string; scheduleId: string; type: AttendanceType; receivedAt: string; locatedAt: string
+  latitude: number; longitude: number; accuracyMeters: number; photoUrl: string
+}
+export type ResultStatus = 'PENDING' | 'ON_TIME' | 'LATE' | 'ABSENT' | 'EARLY_LEAVE' | 'MISSING_CHECK_OUT' | 'IN_PROGRESS' | 'LATE_AND_EARLY_LEAVE'
+export type AttendanceResult = {
+  scheduleId: string; employeeId: string; employeeName: string; workDate: string; shiftName: string
+  startsAt: string; endsAt: string; checkInAt: string | null; checkOutAt: string | null
+  arrival: ResultStatus; departure: ResultStatus; overall: ResultStatus; lateMinutes: number; earlyMinutes: number
+}
+export type AttendanceResultPage = { items: AttendanceResult[]; page: number; size: number; totalElements: number; totalPages: number }
+export const resultLabels: Record<ResultStatus, string> = {
+  PENDING: 'Chờ điểm danh', ON_TIME: 'Đúng giờ', LATE: 'Trễ', ABSENT: 'Vắng', EARLY_LEAVE: 'Về sớm',
+  MISSING_CHECK_OUT: 'Thiếu lượt ra', IN_PROGRESS: 'Đang trong ca', LATE_AND_EARLY_LEAVE: 'Trễ và về sớm',
+}

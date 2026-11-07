@@ -1,5 +1,5 @@
 import { request } from '../../shared/api/client'
-import type { AttendanceFilter, AttendancePageResponse, AttendanceRecord, RegisteredDevice } from './types'
+import type { AttendanceFilter, AttendancePageResponse, AttendanceRecord, RegisteredDevice, AttendanceEvent, AttendanceType, AttendanceResultPage } from './types'
 
 export function listAttendanceRecords(filter: AttendanceFilter = {}) {
   const query = new URLSearchParams({
@@ -33,4 +33,21 @@ export function resetEmployeeDevice(employeeId: string) {
   return request<void>('/attendance-records/devices/' + employeeId, {
     method: 'DELETE',
   })
+}
+
+export function listMyAttendance(from: string, to: string) {
+  return request<AttendanceEvent[]>('/attendance/events?' + new URLSearchParams({ from, to }))
+}
+export function sendAttendance(scheduleId: string, type: AttendanceType, photo: Blob, capturedAt: string, position: GeolocationPosition) {
+  const body = new FormData()
+  body.set('scheduleId', scheduleId); body.set('type', type); body.set('photo', photo, 'camera.jpg')
+  body.set('locatedAt', new Date(position.timestamp).toISOString())
+  body.set('latitude', String(position.coords.latitude)); body.set('longitude', String(position.coords.longitude))
+  body.set('accuracyMeters', String(position.coords.accuracy))
+  body.set('timemarkCapturedAt', capturedAt)
+  body.set('timemarkLatitude', String(position.coords.latitude)); body.set('timemarkLongitude', String(position.coords.longitude))
+  return request<AttendanceEvent>('/attendance/events', { method: 'POST', body })
+}
+export function listAttendanceResults(from: string, to: string, page = 0) {
+  return request<AttendanceResultPage>('/attendance/results?' + new URLSearchParams({ from, to, page: String(page), size: '20' }))
 }
