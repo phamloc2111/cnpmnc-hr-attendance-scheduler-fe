@@ -1,5 +1,6 @@
 export type AttendanceType = 'CHECK_IN' | 'CHECK_OUT'
 export type AttendanceStatus = 'ON_TIME' | 'LATE' | 'EARLY_LEAVE' | 'ABSENT' | 'REJECTED'
+export type FraudType = 'STALE_PHOTO' | 'DUPLICATE_PHOTO' | 'FAKE_LOCATION' | 'UNREGISTERED_DEVICE'
 
 export type AttendanceRecord = {
   id: string
@@ -11,13 +12,26 @@ export type AttendanceRecord = {
   checkType: AttendanceType
   recordedAt: string
   photoUrl: string
+  photoHash?: string | null
   photoCapturedAt: string | null
   photoLocation: string
   deviceLocation: string
   deviceLatitude: number | null
   deviceLongitude: number | null
+  deviceId?: string | null
+  deviceName?: string | null
+  mockLocation?: boolean
+  fraudType?: FraudType | null
   status: AttendanceStatus
   verificationNote: string | null
+}
+
+export type RegisteredDevice = {
+  employeeId: string
+  employeeName: string
+  deviceId: string
+  deviceName: string | null
+  registeredAt: string
 }
 
 export type AttendancePageResponse = {
@@ -49,4 +63,11 @@ export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
   EARLY_LEAVE: 'Về sớm',
   ABSENT: 'Vắng',
   REJECTED: 'Không hợp lệ',
+}
+
+export const fraudTypeLabels: Record<FraudType, string> = {
+  STALE_PHOTO: 'Từ chối: Ảnh cũ',
+  DUPLICATE_PHOTO: 'Từ chối: Ảnh dùng lại',
+  FAKE_LOCATION: 'Cảnh báo: Định vị giả',
+  UNREGISTERED_DEVICE: 'Từ chối: Thiết bị lạ',
 }
