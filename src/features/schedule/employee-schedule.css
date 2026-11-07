@@ -1,0 +1,65 @@
+.employee-week-page .employee-week-hero { min-height:250px; padding-bottom:55px; }
+.employee-week-title { position:relative; z-index:1; width:min(100%,936px); margin:24px auto 0; }
+.employee-week-title > a { display:inline-flex; align-items:center; gap:4px; margin-bottom:14px; font-size:11px; color:#ffffffb3; }
+.employee-week-title > p { margin:0 0 5px; color:#ffdf5d; font-size:9px; font-weight:800; letter-spacing:1.5px; }
+.employee-week-page .employee-week-title h1 { margin:0 0 5px; color:white; font-size:28px; letter-spacing:-.7px; }
+.employee-week-title > span { color:#ffffffb3; font-size:11px; }
+.employee-week-content { position:relative; z-index:2; width:min(100%,1000px); margin:-28px auto 0; padding:0 18px calc(125px + env(safe-area-inset-bottom)); }
+.employee-week-selector { padding:20px; border:1px solid #e6ebf2; border-radius:20px; background:white; box-shadow:0 13px 34px #1b366314; }
+.employee-week-controls { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:end; gap:12px; }
+.employee-week-controls > button { display:grid; place-items:center; width:44px; height:46px; padding:0; color:#0758c9; background:#f5f8fd; border:1px solid #e6ebf2; border-radius:12px; }
+.employee-week-picker label { display:block; margin:0 0 7px; color:#60708b; font-size:10px; font-weight:650; }
+.employee-week-picker input { display:block; width:100%; min-width:0; height:46px; padding:8px 11px; border:1px solid #e6ebf2; border-radius:12px; background:white; color:#10213f; font-size:13px; }
+.employee-week-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; }
+.employee-week-toolbar button { display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:7px 13px; border:1px solid #e6ebf2; border-radius:10px; background:white; color:#0758c9; font-size:11px; font-weight:650; }
+.employee-week-toolbar .employee-this-week { background:#edf4ff; border-color:#edf4ff; }
+.employee-week-range { display:flex; align-items:center; justify-content:center; gap:7px; margin-top:16px; padding-top:15px; border-top:1px solid #eff2f6; color:#60708b; }
+.employee-week-range strong { font-size:12px; font-weight:650; }
+.employee-week-results { margin-top:25px; }
+.employee-week-list-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.employee-week-list-heading h2 { margin:0; font-size:16px; color:#10213f; letter-spacing:-.3px; }
+.employee-week-list-heading > span { padding:5px 9px; border-radius:20px; background:#eaf3ff; color:#0758c9; font-size:10px; }
+.employee-week-state { display:flex; flex-direction:column; align-items:center; padding:38px 20px; border:1px solid #e6ebf2; border-radius:20px; background:white; text-align:center; font-size:13px; color:#7c899d; }
+.employee-week-state-icon { display:grid; place-items:center; width:66px; height:66px; margin-bottom:21px; border-radius:20px; background:#edf4ff; color:#0758c9; }
+.employee-week-state h2 { margin:0 0 10px; color:#10213f; font-size:19px; letter-spacing:-.5px; }
+.employee-week-state p { margin:0 0 18px; color:#7c899d; font-size:12px; }
+.employee-week-state > a,.employee-week-state > button { padding:10px 18px; border:1px solid #dce8fb; border-radius:11px; background:#f3f7fe; color:#0758c9; font-size:12px; }
+.employee-week-list { display:grid; gap:13px; margin:0; padding:0; list-style:none; }
+.employee-week-shift { display:flex; align-items:center; gap:14px; min-width:0; padding:19px 15px; border:1px solid #e6ebf2; border-radius:18px; background:white; }
+.employee-week-shift.today { border-left:4px solid #ffd33e; padding-left:12px; }
+.employee-week-date { display:flex; flex-direction:column; align-items:center; justify-content:center; width:48px; flex:0 0 48px; align-self:stretch; border-right:1px solid #edf0f5; padding-right:11px; }
+.employee-week-date > span { font-size:10px; color:#8290a5; }
+.employee-week-date strong { margin:2px 0; font-size:25px; line-height:1.3; color:#0758c9; font-weight:750; }
+.employee-week-date small { font-size:9px; color:#8290a5; white-space:nowrap; }
+.employee-week-shift-info { flex:1; min-width:0; }
+.employee-week-shift-title { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.employee-week-shift-title h3 { margin:0; font-size:15px; font-weight:700; color:#10213f; overflow-wrap:anywhere; }
+.employee-week-shift-title > span { padding:3px 7px; border-radius:20px; background:#fff7d9; color:#a17b08; font-size:9px; }
+.employee-week-shift-time,.employee-week-position { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.employee-week-shift-time { margin:9px 0 5px; color:#0758c9; font-size:12px; font-weight:650; }
+.employee-week-position { margin:0 0 7px; color:#7c899d; font-size:11px; overflow-wrap:anywhere; }
+.employee-week-shift-info > small { color:#8290a5; font-size:10px; }
+.employee-overnight { color:#a17b08; font-size:10px; white-space:nowrap; }
+.employee-week-detail { display:grid; place-items:center; width:32px; height:34px; flex:0 0 32px; padding:0; border:0; border-radius:9px; background:#f3f6fa; color:#6580a6; }
+.employee-week-pagination { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:18px; font-size:10px; color:#7c899d; }
+.employee-week-pagination button { min-height:36px; padding:8px 11px; border:1px solid #e6ebf2; border-radius:10px; color:#0758c9; font-size:10px; }
+.employee-week-note { margin:20px 4px 0; font-size:10px; color:#8290a5; }
+.employee-week-nav > a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:0; color:#8792a5; font-size:10px; font-weight:650; }
+.employee-week-nav > a > span { display:grid; place-items:center; height:30px; }
+.employee-week-page .employee-week-nav > a.active { color:#0758c9; background:transparent; }
+.employee-week-nav > a.active > span { width:43px; height:34px; border-radius:12px; color:#0a408f; background:#ffd43b; }
+@media(min-width:700px) {
+  .employee-week-content { padding-inline:32px; }
+  .employee-week-selector { padding:24px 28px; }
+  .employee-week-controls { grid-template-columns:46px minmax(160px,320px) 46px; justify-content:center; }
+  .employee-week-toolbar { max-width:436px; margin-inline:auto; }
+  .employee-week-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(min-width:900px) { .employee-week-nav { left:max(32px,calc((100vw - 1000px)/2 + 32px)); } }
+@media(max-width:370px) {
+  .employee-week-content { padding-inline:13px; }
+  .employee-week-selector { padding:17px; }
+  .employee-week-controls { gap:8px; }
+  .employee-week-shift { gap:10px; padding-inline:12px; }
+  .employee-week-detail { width:28px; flex-basis:28px; }
+}
