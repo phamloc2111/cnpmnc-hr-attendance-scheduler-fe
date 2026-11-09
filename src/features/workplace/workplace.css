@@ -1,0 +1,35 @@
+.workplace-layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr); gap:22px; align-items:start; }
+.workplace-form-card { padding:26px; }
+.workplace-form-card fieldset { margin:0; padding:0; border:0; min-width:0; }
+.workplace-card-heading { display:flex; align-items:center; gap:13px; margin-bottom:24px; }
+.workplace-card-heading h2 { margin:0 0 3px; font-size:18px; color:#1e3557; }
+.workplace-card-heading p { margin:0; font-size:12px; color:#8290a5; }
+.workplace-icon { display:grid; place-items:center; flex:0 0 44px; width:44px; height:44px; color:#0758c9; background:#edf4ff; border-radius:14px; }
+.workplace-locate { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:46px; background:#edf4ff; }
+.workplace-hint,.workplace-gps-info { margin:10px 0 0; color:#8290a5; font-size:11px; line-height:1.8; }
+.workplace-gps-info { padding:12px; color:#285b9e; background:#edf4ff; border-radius:10px; }
+.workplace-form-card .form-grid { gap:0 18px; margin-top:5px; }
+.workplace-form-card .form-grid label { font-size:11px; }
+.workplace-form-card .form-grid small { line-height:1.7; }
+.workplace-map-link { display:inline-block; margin-top:20px; color:#0758c9; font-size:12px; font-weight:700; }
+.workplace-save { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-top:25px; padding-top:22px; border-top:1px solid #edf1f7; }
+.workplace-save > small { flex:1; color:#8290a5; font-size:11px; line-height:1.8; }
+.workplace-save button { min-height:46px; white-space:nowrap; }
+.workplace-preview { padding:26px; text-align:center; }
+.workplace-configured { display:inline-block; padding:6px 12px; border-radius:20px; background:#fff5d6; color:#977215; font-size:10px; font-weight:700; }
+.workplace-configured.ready { background:#edf4ff; color:#0758c9; }
+.workplace-radius-visual { display:grid; place-items:center; width:150px; height:150px; margin:26px auto 22px; border:1px dashed #75a3e6; background:#edf4ff; border-radius:50%; }
+.workplace-radius-visual > div { display:grid; place-items:center; width:94px; height:94px; color:#0758c9; border:1px solid #d2e1f8; background:#dfeaff; border-radius:50%; box-shadow:0 0 0 12px #e6efff; }
+.workplace-preview h2 { color:#1e3557; font-size:16px; margin:0 0 8px; }
+.workplace-limit { display:block; font-size:40px; color:#0758c9; letter-spacing:-1.3px; line-height:1.3; }
+.workplace-limit small { font-size:16px; letter-spacing:0; margin-left:5px; }
+.workplace-preview > p { font-size:11px; color:#718198; line-height:1.8; margin:8px 0 0; }
+.workplace-preview ul { text-align:left; margin:22px 0 0; padding-left:18px; color:#60718b; font-size:11px; line-height:1.9; }
+.workplace-preview li + li { margin-top:8px; }
+.workplace-preview .workplace-shared-note { border-top:1px solid #edf1f7; padding-top:18px; margin-top:20px; }
+.workplace-unconfigured { display:flex; align-items:center; gap:12px; padding:16px 20px; margin-bottom:20px; border:1px solid #f4e4ad; border-radius:15px; color:#91701c; background:#fff9e7; }
+.workplace-unconfigured svg { flex-shrink:0; }
+.workplace-unconfigured strong { font-size:12px; }
+.workplace-unconfigured p { margin:3px 0 0; font-size:11px; line-height:1.7; }
+@media(max-width:1100px) { .workplace-layout { grid-template-columns:1fr; } .workplace-preview { display:block; } }
+@media(max-width:620px) { .workplace-form-card,.workplace-preview { padding:20px; } .workplace-unconfigured { padding:14px; } .workplace-card-heading h2 { font-size:16px; } .workplace-save { flex-direction:column; align-items:stretch; } }
