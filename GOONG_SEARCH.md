@@ -39,7 +39,7 @@ provider. Request đầu vào không hợp lệ trả `400 INVALID_PLACE_QUERY`.
 Proxy dùng host cố định, timeout connect 2 giây/read 5 giây và không chủ động retry.
 API không cho client truyền URL hoặc API key. Các response dùng `no-store`.
 
-Frontend chỉ gọi tìm khi bấm nút/Enter, không gọi mỗi lần gõ. Đổi từ khóa, chọn
+Frontend tự gợi ý sau 400ms ngừng gõ (từ 3 ký tự), tối đa 5 địa chỉ. Bấm Tìm kiếm/Enter bỏ qua thời gian chờ và lấy tối đa 5 kết quả ngay; request gợi ý đang chờ bị hủy để không ghi đè kết quả tìm. Không tự tìm khi đang gõ IME hoặc sau khi chọn một địa chỉ. Đổi từ khóa, chọn
 điểm khác hoặc rời trang hủy/bỏ qua response cũ. Enter trong ô địa chỉ không submit
 form lưu cấu hình. Khi tìm lỗi, có thể thử lại hoặc nhập tọa độ/chọn trên bản đồ.
 Địa chỉ chỉ dùng để hỗ trợ chọn vị trí, chưa lưu tên địa chỉ vào database.
