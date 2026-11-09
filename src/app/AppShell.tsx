@@ -50,6 +50,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
   ] : [
     { path: '/employees', label: 'Nhân viên', icon: 'team' as const },
     { path: '/positions', label: 'Vị trí', icon: 'briefcase' as const },
+    { path: '/workplace', label: 'Điểm làm việc', icon: 'pin' as const },
     { path: '/schedules', label: 'Lịch làm việc', icon: 'calendar' as const },
     { path: '/attendance', label: 'Bảng công', icon: 'clock' as const },
     { path: '/attendance-results', label: 'Phân loại ca làm', icon: 'check' as const },
