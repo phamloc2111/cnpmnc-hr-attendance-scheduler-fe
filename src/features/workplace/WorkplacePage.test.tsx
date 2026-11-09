@@ -9,6 +9,11 @@ import { AuthProvider } from '../auth/AuthProvider'
 import { saveSession } from '../../shared/api/client'
 import type { SaveWorkplace, WorkplaceSettings } from './api'
 
+vi.mock('./GoongWorkplaceMap', () => ({
+  GoongWorkplaceMap: ({ onSelect, disabled }: { onSelect: (position: { latitude: number; longitude: number }) => void; disabled: boolean }) =>
+    <button type="button" disabled={disabled} onClick={() => onSelect({ latitude: 11.1234567, longitude: 107.7654321 })}>Chọn điểm trên Goong</button>,
+}))
+
 const base = 'http://localhost:8080/api/v1'
 let settings: WorkplaceSettings
 let writes: SaveWorkplace[] = [], reads = 0
@@ -97,4 +102,15 @@ it('denies employees access without requesting workplace settings', async () => 
   expect(await screen.findByRole('heading', { name: 'Bạn không có quyền truy cập' })).toBeInTheDocument()
   expect(reads).toBe(0)
   expect(screen.queryByRole('link', { name: 'Điểm làm việc' })).not.toBeInTheDocument()
+})
+
+it('keeps a map selection as an unsaved draft and persists it only on explicit save', async () => {
+  render(<WorkplacePage />); await screen.findByLabelText('Vĩ độ')
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Chọn điểm trên Goong' }))
+  expect(screen.getByLabelText('Vĩ độ')).toHaveValue(11.1234567)
+  expect(screen.getByLabelText('Kinh độ')).toHaveValue(107.7654321)
+  expect(writes).toHaveLength(0)
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Lưu cấu hình' }))
+  await waitFor(() => expect(writes).toHaveLength(1))
+  expect(writes[0]).toEqual({ latitude: 11.1234567, longitude: 107.7654321, radiusMeters: 100, gpsToleranceMeters: 30, version: 0 })
 })

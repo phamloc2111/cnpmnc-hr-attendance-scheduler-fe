@@ -19,3 +19,5 @@ Flyway **V11** tạo bảng `organization_workplace_settings`, tối đa một c
 Triển khai backend mới để Flyway chạy V11, triển khai frontend, sau đó quản lý nhập tọa độ thật và bấm **Lưu cấu hình**. Không tự thay `.env` hoặc tự suy đoán vị trí nơi làm việc.
 
 Camera và Geolocation cần HTTPS hoặc localhost cùng quyền trình duyệt. Tọa độ và độ chính xác vẫn là dữ liệu do thiết bị gửi; cấu hình bán kính không phải cơ chế chứng thực độc lập chống giả GPS.
+
+Goong map selection and Maptiles key setup: see [GOONG.md](GOONG.md).

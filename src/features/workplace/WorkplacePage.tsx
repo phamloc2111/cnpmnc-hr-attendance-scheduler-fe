@@ -4,6 +4,7 @@ import { HomeIcon } from '../../shared/components/HomeIcon'
 import { instantLabel } from '../../shared/utils/dates'
 import { getWorkplace, saveWorkplace } from './api'
 import type { WorkplaceSettings } from './api'
+import { GoongWorkplaceMap } from './GoongWorkplaceMap'
 import './workplace.css'
 
 export function WorkplacePage() {
@@ -71,13 +72,15 @@ export function WorkplacePage() {
           <form noValidate onSubmit={event => { void save(event) }}><fieldset disabled={saving || locating}>
             <button type="button" className="workplace-locate" onClick={locate}><HomeIcon name="pin" size={17} />{locating ? 'Đang lấy vị trí…' : 'Lấy vị trí hiện tại'}</button>
             <p className="workplace-hint">Chỉ dùng vị trí hiện tại khi bạn đang ở điểm làm việc. Có thể nhập tọa độ thủ công.</p>
+            <GoongWorkplaceMap position={coordinatesValid ? { latitude: Number(latitude), longitude: Number(longitude) } : null}
+              radius={previewValid ? Number(radius) : null} tolerance={previewValid ? Number(tolerance) : null} disabled={saving || locating}
+              onSelect={position => { setLatitude(position.latitude.toFixed(7)); setLongitude(position.longitude.toFixed(7)); setGpsInfo(''); setNotice('') }} />
             {gpsInfo && <p className="workplace-gps-info" role="status">{gpsInfo}</p>}
             <div className="form-grid"><div><label htmlFor="workplace-latitude">Vĩ độ</label><input id="workplace-latitude" type="number" step="any" min="-90" max="90" required placeholder="Ví dụ: 10.7726" value={latitude} onChange={event => setLatitude(event.target.value)} /></div>
               <div><label htmlFor="workplace-longitude">Kinh độ</label><input id="workplace-longitude" type="number" step="any" min="-180" max="180" required placeholder="Ví dụ: 106.6579" value={longitude} onChange={event => setLongitude(event.target.value)} /></div>
               <div><label htmlFor="workplace-radius">Bán kính điểm làm việc (m)</label><input id="workplace-radius" type="number" step="1" min="10" max="5000" required value={radius} onChange={event => setRadius(event.target.value)} /><small className="muted">Từ 10 đến 5000m, tính từ tọa độ tâm.</small></div>
               <div><label htmlFor="workplace-tolerance">Dung sai GPS (m)</label><input id="workplace-tolerance" type="number" step="1" min="20" max="50" required value={tolerance} onChange={event => setTolerance(event.target.value)} /><small className="muted">Từ 20 đến 50m, mặc định 30m.</small></div>
             </div>
-            {coordinatesValid && <a className="workplace-map-link" href={'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude)} target="_blank" rel="noopener noreferrer">Xem tọa độ trên bản đồ ↗</a>}
             {error && <p role="alert" className="error">{error}</p>}
             <div className="workplace-save"><small>{settings.updatedAt ? 'Lưu gần nhất: ' + instantLabel(settings.updatedAt) : settings.configured ? 'Đang dùng cấu hình máy chủ; lưu để quản lý trực tiếp trên web.' : 'Chưa có cấu hình được lưu.'}</small><button type="submit" className="primary" disabled={saving || locating}>{saving ? 'Đang lưu…' : 'Lưu cấu hình'}</button></div>
           </fieldset></form>

@@ -7,9 +7,14 @@
     "test": "vitest run",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:local": "vite --mode backend-local",
+    "dev:cloud": "vite --mode backend-cloud",
+    "build:local": "tsc -b && vite build --mode backend-local",
+    "build:cloud": "tsc -b && vite build --mode backend-cloud"
   },
   "dependencies": {
+    "@goongmaps/goong-js": "^1.0.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -25,5 +30,11 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "@goongmaps/goong-js": {
+      "minimist": "^1.2.8",
+      "@mapbox/geojson-rewind": "^0.5.2"
+    }
   }
 }

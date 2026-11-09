@@ -1,5 +1,11 @@
+import { resolveBackendApiUrl } from './backendUrl'
+
 const storageKey = 'shiftsync.session'
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+const apiBaseUrl = resolveBackendApiUrl(import.meta.env.MODE, {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  VITE_API_LOCAL_BASE_URL: import.meta.env.VITE_API_LOCAL_BASE_URL,
+  VITE_API_CLOUD_BASE_URL: import.meta.env.VITE_API_CLOUD_BASE_URL,
+})
 
 export class ApiError extends Error {
   readonly status: number
@@ -30,7 +36,7 @@ export async function request<T>(path: string, options: RequestInit = {}, anonym
   if (session) headers.set('Authorization', 'Bearer ' + session.accessToken)
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   let response: Response
-  try { response = await fetch(apiBaseUrl + '/api/v1' + path, { ...options, headers, cache: 'no-store' }) }
+  try { response = await fetch(apiBaseUrl + path, { ...options, headers, cache: 'no-store' }) }
   catch { throw new ApiError(0, 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại.') }
   if (!response.ok) {
     let message = response.status === 403 ? 'Bạn không có quyền truy cập chức năng này' : 'Yêu cầu không thành công. Vui lòng thử lại.'
