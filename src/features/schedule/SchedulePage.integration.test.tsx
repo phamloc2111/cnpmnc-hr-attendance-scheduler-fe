@@ -196,7 +196,7 @@ it('shows API errors and supports retry', async () => {
 it('employees can view their schedule without assignment actions', async () => {
   role = 'EMPLOYEE'; window.location.hash = '/my-schedule'; rows = [row]; mount()
   expect(await screen.findByRole('heading', { name: 'Lịch của tôi' })).toBeInTheDocument()
-  expect(await screen.findByText('Ca đêm')).toBeInTheDocument()
+  expect((await screen.findAllByRole('button', { name: /Chi tiết Ca đêm ngày/ })).length).toBe(2)
   expect(screen.queryByRole('button', { name: 'Phân ca' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Hủy ca/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Mẫu ca' })).not.toBeInTheDocument()
@@ -213,7 +213,7 @@ it('employee weekly cards show overnight times and open full details', async () 
   role = 'EMPLOYEE'; window.location.hash = '/my-schedule'; rows = [row]; mount()
   expect(await screen.findByText('(+1 ngày)')).toBeInTheDocument()
   const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: /Chi tiết Ca đêm ngày/ }))
+  await user.click(screen.getAllByRole('button', { name: /Chi tiết Ca đêm ngày/ })[0])
   const dialog = within(screen.getByRole('dialog', { name: 'Chi tiết ca làm' }))
   expect(dialog.getByText('05/11/2026 22:00 → 06/11/2026 06:00')).toBeInTheDocument()
   expect(dialog.getByText('Nghỉ 30 phút · Làm 450 phút')).toBeInTheDocument()
@@ -222,19 +222,20 @@ it('employee weekly controls request the next week without changing management f
   role = 'EMPLOYEE'; window.location.hash = '/my-schedule'; mount()
   await screen.findByText('Chưa có lịch trong tuần này')
   await userEvent.setup().click(screen.getByRole('button', { name: 'Tuần sau' }))
-  await waitFor(() => expect(requests.at(-1)?.get('from')).toBe('2026-11-09'))
+  await waitFor(() => expect(requests.at(-1)?.get('from')).toBe('2026-11-08'))
   expect(requests.at(-1)?.get('to')).toBe('2026-11-15')
 })
-it('employee weekly view loads the next page from the server', async () => {
+it('employee weekly grid loads every server page and deduplicates shifts', async () => {
   role = 'EMPLOYEE'; window.location.hash = '/my-schedule'
   server.use(http.get(base + '/work-schedules', ({ request }) => {
     const query = new URL(request.url).searchParams; requests.push(query)
     return HttpResponse.json(page([row], Number(query.get('page')), 2))
   }))
-  mount(); const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Trang sau' }))
-  await waitFor(() => expect(requests.at(-1)?.get('page')).toBe('1'))
-  expect(await screen.findByText('Trang 2 / 2')).toBeInTheDocument()
+  mount()
+  expect(await screen.findByRole('region', { name: 'Lưới lịch tuần theo giờ' })).toBeInTheDocument()
+  expect(requests.map(query => query.get('page'))).toEqual(['0', '1'])
+  expect(screen.getAllByRole('button', { name: /Chi tiết Ca đêm ngày/ })).toHaveLength(2)
+  expect(screen.queryByRole('button', { name: 'Trang sau' })).not.toBeInTheDocument()
 })
 it('employee weekly API errors offer retry and retain authentication', async () => {
   role = 'EMPLOYEE'; window.location.hash = '/my-schedule'

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { App } from './app/App'
 import './style.css'
+import './app/theme.css'
+import './app/theme.css'
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => { void navigator.serviceWorker.register('/sw.js').catch(() => { /* App stays usable if installation is unavailable. */ }) })

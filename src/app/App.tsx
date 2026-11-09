@@ -2,17 +2,20 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useAuth } from '../features/auth/AuthProvider'
 import { ChangePasswordModal } from '../features/auth/ChangePasswordModal'
 import { LoginPage } from '../features/auth/LoginPage'
-import { homePaths, roleLabels } from '../features/auth/types'
+import { homePaths } from '../features/auth/types'
+import { AppShell } from './AppShell'
+import { HomeIcon } from '../shared/components/HomeIcon'
 import type { Role } from '../features/auth/types'
 import { ApiError, clearSession, request } from '../shared/api/client'
 import { AccountsPage } from '../features/accounts'
 import { SchedulePage, EmployeeSchedulePage } from '../features/schedule'
-import { AttendancePage, EmployeeHome } from '../features/attendance'
+import { AttendancePage, AttendanceResultsPage, EmployeeHome } from '../features/attendance'
 import { PositionsPage } from '../features/positions'
 
 const routes: Record<string, { roles: Role[]; endpoint: string }> = {
   '/positions': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
   '/schedules': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
+  '/attendance-results': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
   '/attendance': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
   '/my-schedule': { roles: ['EMPLOYEE'], endpoint: '' },
   '/accounts': { roles: ['ADMIN'], endpoint: '' },
@@ -49,19 +52,14 @@ export function App() {
   if (restoreError) return <main className="center-state"><h1>Chưa thể kết nối</h1><p role="alert">{restoreError}</p><div className="actions"><button className="primary" onClick={retry}>Thử lại</button><button onClick={clearSession}>Về đăng nhập</button></div></main>
   if (!user) return <LoginPage notice={notice} />
   const route = routes[path]
-  return <div className={'app-layout' + (user.role === 'EMPLOYEE' ? ' employee-shell' + (['/employee', '/my-schedule'].includes(path) ? ' home-active' : '') : '')}><aside className="sidebar"><a className="brand" href={'#' + homePaths[user.role]}><span className="brand-mark">S</span> ShiftSync</a><p className="nav-label">KHÔNG GIAN LÀM VIỆC</p>
-    <nav aria-label="Menu chính"><a className={path === homePaths[user.role] ? 'active' : ''} href={'#' + homePaths[user.role]}>Tổng quan</a>
-      {user.role === 'ADMIN' && <a className={path === '/management' ? 'active' : ''} href="#/management">Không gian quản lý</a>}
-      {(user.role === 'MANAGER' || user.role === 'ADMIN') && <><a className={path === '/employees' ? 'active' : ''} href="#/employees">Nhân viên</a><a className={path === '/positions' ? 'active' : ''} href="#/positions">Vị trí</a><a className={path === '/schedules' ? 'active' : ''} href="#/schedules">Lịch làm việc</a><a className={path === '/attendance' ? 'active' : ''} href="#/attendance">Bảng công</a><button disabled>Báo cáo <small>Sắp có</small></button></>}
-      {user.role === 'EMPLOYEE' && <><a className={path === '/my-schedule' ? 'active' : ''} href="#/my-schedule">Lịch của tôi</a><button disabled>Chấm công <small>Sắp có</small></button><button disabled>Lịch rảnh <small>Sắp có</small></button></>}
-      {user.role === 'ADMIN' && <><p className="nav-label">QUẢN TRỊ HỆ THỐNG</p><a className={path === '/accounts' ? 'active' : ''} href="#/accounts">Tài khoản</a><button disabled>Cài đặt <small>Sắp có</small></button></>}
-    </nav><div className="sidebar-user"><span className="avatar">{user.displayName.slice(0, 1)}</span><div><strong>{user.displayName}</strong><small>{roleLabels[user.role]}</small></div></div></aside>
-    <div className="workspace-layout">{!(user.role === 'EMPLOYEE' && ['/employee', '/my-schedule'].includes(path)) && <header className="topbar"><span>{user.role === 'EMPLOYEE' ? <a href="#/employee" aria-label="Trang chủ ShiftSync">ShiftSync</a> : roleLabels[user.role]}</span><div className="topbar-actions"><button type="button" onClick={() => { setPasswordNotice(''); setChangingPassword(true) }}>Đổi mật khẩu</button><button onClick={() => { void signOut() }} disabled={loggingOut}>{loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</button></div></header>}
+  return <AppShell role={user.role} name={user.displayName} path={path} loggingOut={loggingOut}
+    onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }}>
       {passwordNotice && <p className="notice workspace-notice" role="status">{passwordNotice}</p>}
       {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} onSaved={() => { setChangingPassword(false); setPasswordNotice('Đổi mật khẩu thành công.') }} />}
-      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/my-schedule' ? <EmployeeSchedulePage name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/schedules' ? <SchedulePage /> : path === '/attendance' ? <AttendancePage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
-    </div></div>
+      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/my-schedule' ? <EmployeeSchedulePage name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/schedules' ? <SchedulePage /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/attendance' ? <AttendancePage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><div className="page-heading"><div><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1></div></div><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
+  </AppShell>
 }
+
 function Workspace({ endpoint, name }: { endpoint: string; name: string }) {
   const [data, setData] = useState<{ title: string; description: string } | null>(null)
   const [error, setError] = useState('')
@@ -76,5 +74,12 @@ function Workspace({ endpoint, name }: { endpoint: string; name: string }) {
   }, [endpoint, attempt])
   if (error) return <main className="workspace"><p className="error" role="alert">{error}</p><button onClick={() => setAttempt(value => value + 1)}>Thử lại</button></main>
   if (!data) return <main className="workspace" role="status">Đang tải không gian làm việc…</main>
-  return <main className="workspace"><p className="eyebrow">{data.title}</p><h1>Xin chào, {name}.</h1><p className="muted">{data.description}</p><section className="welcome-card"><span className="status-dot" /><h2>Bạn đã sẵn sàng</h2><p>Đăng nhập thành công. Các chức năng chấm công và xếp lịch sẽ xuất hiện tại đây khi được triển khai.</p></section></main>
+  return <main className="workspace"><div className="page-heading"><div><p className="eyebrow">{data.title}</p><h1>Xin chào, {name}.</h1><p className="muted">{data.description}</p></div></div>
+    <section className="welcome-card"><span className="status-dot" /><h2>Không gian làm việc của bạn</h2><p>Truy cập nhanh các chức năng để quản lý đội ngũ và theo dõi lịch làm việc.</p></section>
+    <section className="workspace-shortcuts" aria-label="Truy cập nhanh">
+      <a className="workspace-shortcut" href={endpoint === 'administration' ? '#/accounts' : '#/employees'}><span><HomeIcon name="team" /></span><strong>{endpoint === 'administration' ? 'Tài khoản' : 'Nhân viên'}</strong><small>Thông tin và phân công đội ngũ</small></a>
+      <a className="workspace-shortcut" href="#/schedules"><span><HomeIcon name="calendar" /></span><strong>Lịch làm việc</strong><small>Mẫu ca và phân ca theo tuần</small></a>
+      <a className="workspace-shortcut" href="#/attendance-results"><span><HomeIcon name="check" /></span><strong>Phân loại ca làm</strong><small>Theo dõi kết quả vào và ra ca</small></a>
+    </section>
+  </main>
 }

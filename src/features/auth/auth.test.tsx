@@ -103,10 +103,16 @@ describe('SS-13 phân quyền', () => {
     mockApi(role)
     mount()
     await screen.findByText('Xin chào, Nguyễn An.')
-    expect(screen.queryByRole('link', { name: /Tài khoản/ }) !== null).toBe(role === 'ADMIN')
-    expect(screen.queryByRole('button', { name: /Cài đặt/ }) !== null).toBe(role === 'ADMIN')
-    expect(screen.queryByRole('link', { name: /Bảng công/ }) !== null).toBe(role !== 'EMPLOYEE')
-    expect(screen.queryByRole('link', { name: /Lịch của tôi/ }) !== null).toBe(role === 'EMPLOYEE')
+    if (role === 'EMPLOYEE') {
+      expect(screen.queryByRole('navigation', { name: 'Menu chính' })).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Xem lịch của tôi →' })).toBeInTheDocument()
+    } else {
+      const menu = within(screen.getByRole('navigation', { name: 'Menu chính' }))
+      expect(menu.queryByRole('link', { name: 'Tài khoản' }) !== null).toBe(role === 'ADMIN')
+      expect(menu.queryByRole('button', { name: /Cài đặt/ }) !== null).toBe(role === 'ADMIN')
+      expect(menu.getByRole('link', { name: 'Bảng công' })).toBeInTheDocument()
+      expect(menu.queryByRole('link', { name: 'Lịch của tôi' })).not.toBeInTheDocument()
+    }
   })
   it('chặn nhân viên mở đường dẫn quản trị trực tiếp', async () => {
     saveSession({ accessToken: 'test-token', expiresAt: future() })
