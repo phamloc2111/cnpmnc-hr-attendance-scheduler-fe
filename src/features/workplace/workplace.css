@@ -11,7 +11,6 @@
 .workplace-form-card .form-grid { gap:0 18px; margin-top:5px; }
 .workplace-form-card .form-grid label { font-size:11px; }
 .workplace-form-card .form-grid small { line-height:1.7; }
-.workplace-map-link { display:inline-block; margin-top:20px; color:#0758c9; font-size:12px; font-weight:700; }
 .workplace-save { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-top:25px; padding-top:22px; border-top:1px solid #edf1f7; }
 .workplace-save > small { flex:1; color:#8290a5; font-size:11px; line-height:1.8; }
 .workplace-save button { min-height:46px; white-space:nowrap; }
@@ -33,3 +32,23 @@
 .workplace-unconfigured p { margin:3px 0 0; font-size:11px; line-height:1.7; }
 @media(max-width:1100px) { .workplace-layout { grid-template-columns:1fr; } .workplace-preview { display:block; } }
 @media(max-width:620px) { .workplace-form-card,.workplace-preview { padding:20px; } .workplace-unconfigured { padding:14px; } .workplace-card-heading h2 { font-size:16px; } .workplace-save { flex-direction:column; align-items:stretch; } }
+
+.workplace-map-section { margin:22px 0 16px; min-width:0; }
+.workplace-map-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.workplace-map-heading h3 { margin:0; color:#1e3557; font-size:14px; }
+.workplace-map-heading > span { font-size:10px; color:#718198; }
+.workplace-map-placeholder { margin:12px 0 0; padding:24px 18px; border:1px dashed #bed2ee; border-radius:14px; background:#f5f8fe; color:#60718b; text-align:center; font-size:12px; line-height:1.8; }
+.workplace-map-placeholder p { margin:0 0 14px; }
+.workplace-map-placeholder button { background:#0758c9; border-color:#0758c9; color:white; }
+.workplace-map-canvas { position:relative; width:100%; height:340px; margin-top:12px; overflow:hidden; border:1px solid #dce5f2; border-radius:14px; background:#eef3f9; text-align:left; }
+.workplace-map-canvas canvas { outline-offset:-3px; }
+.workplace-map-canvas .mapboxgl-ctrl-group button { width:32px; height:32px; padding:0; min-height:0; border-radius:0; }
+.workplace-map-canvas .mapboxgl-ctrl-attrib { font-size:10px; }
+.workplace-map-legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:12px; font-size:10px; color:#60718b; }
+.workplace-map-legend span { display:flex; align-items:center; gap:6px; }
+.workplace-map-legend i { width:10px; height:10px; border:1px solid #0758c9; border-radius:50%; background:#e0ebfc; }
+.workplace-map-legend span + span i { border:1px dashed #c88a09; background:#fff4d8; }
+.workplace-map-center { margin-top:12px; font-size:11px; }
+.workplace-map-error { margin-top:12px; color:#b83c32; font-size:12px; line-height:1.8; }
+.workplace-map-error p { margin:0 0 8px; }
+@media(max-width:620px) { .workplace-map-canvas { height:280px; } }
