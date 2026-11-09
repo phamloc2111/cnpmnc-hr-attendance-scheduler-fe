@@ -52,3 +52,14 @@
 .workplace-map-error { margin-top:12px; color:#b83c32; font-size:12px; line-height:1.8; }
 .workplace-map-error p { margin:0 0 8px; }
 @media(max-width:620px) { .workplace-map-canvas { height:280px; } }
+
+.workplace-address-search { margin:18px 0 16px; }
+.workplace-address-search > label { display:block; margin-bottom:8px; font-size:11px; font-weight:700; color:#1e3557; }
+.workplace-address-input { display:flex; align-items:stretch; gap:8px; }
+.workplace-address-input input { flex:1; min-width:0; width:0; margin:0; }
+.workplace-address-input button { flex-shrink:0; padding:0 15px; background:#edf4ff; color:#0758c9; font-size:12px; }
+.workplace-address-results { list-style:none; margin:12px 0 0; padding:0; border:1px solid #dce5f2; border-radius:12px; overflow:hidden; }
+.workplace-address-results li + li { border-top:1px solid #edf1f7; }
+.workplace-address-results button { width:100%; padding:12px 14px; border:0; border-radius:0; color:#1e3557; text-align:left; font-size:12px; line-height:1.7; white-space:normal; overflow-wrap:anywhere; background:white; }
+.workplace-address-results button:hover,.workplace-address-results button:focus-visible { background:#edf4ff; }
+.workplace-address-chosen { padding:12px; border-radius:10px; background:#edf4ff; color:#285b9e; font-size:11px; line-height:1.8; }

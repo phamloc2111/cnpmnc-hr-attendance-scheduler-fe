@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Map as GoongMap, Marker } from '@goongmaps/goong-js'
+import { WorkplaceAddressSearch } from './WorkplaceAddressSearch'
 import { loadGoongSdk } from './goongSdk'
 import { workplaceAreas, workplaceBounds } from './workplaceGeometry'
 import type { Coordinates } from './workplaceGeometry'
@@ -89,6 +90,7 @@ export function GoongWorkplaceMap(props: Props) {
 
   return <section className="workplace-map-section" aria-label="Chọn điểm làm việc trên bản đồ">
     <div className="workplace-map-heading"><h3>Bản đồ điểm làm việc</h3><span>Goong Maps</span></div>
+    <WorkplaceAddressSearch disabled={props.disabled} position={props.position} onSelect={props.onSelect} />
     {!key ? <p className="workplace-map-placeholder" role="status">Bản đồ chưa được cấu hình. Bạn vẫn có thể nhập tọa độ hoặc lấy vị trí hiện tại.</p>
       : !opened ? <div className="workplace-map-placeholder"><p>Chọn vị trí trực tiếp và xem vùng chấm công trên bản đồ.</p><button type="button" disabled={props.disabled} onClick={() => setOpened(true)}>Mở bản đồ Goong</button></div>
       : <>

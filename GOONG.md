@@ -28,7 +28,7 @@ Loading, network/auth/quota errors and unsupported WebGL show a fallback with re
 The map's default viewport is for browsing and is never saved as a workplace.
 Failed map loads do not change saved settings or disable manual configuration.
 
-This integration does not call Places, autocomplete, reverse geocoding, routing or
+Address search now calls Goong V2 Autocomplete and Place Detail through the authorized backend; see [GOONG_SEARCH.md](GOONG_SEARCH.md). It does not call reverse geocoding, routing or
 Google Maps. Selecting/dragging a pin and drawing circles happen in the browser.
 Employee attendance still uses browser GPS and backend distance checks; it does
 not load this map or call Goong APIs. Existing timestamp, image, GPS accuracy and
