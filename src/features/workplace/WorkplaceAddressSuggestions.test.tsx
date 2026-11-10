@@ -17,10 +17,10 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); vi.useRealTimers() })
 
-it('waits 400ms after the last edit, requests once and shows at most five suggestions', async () => {
+it('waits 200ms after the last edit, requests once and shows at most five suggestions', async () => {
   render(<WorkplaceAddressSearch {...defaults} />)
-  type('Bách'); await advance(399); expect(search).not.toHaveBeenCalled()
-  type('Bách Khoa'); await advance(399); expect(search).not.toHaveBeenCalled()
+  type('Bách'); await advance(199); expect(search).not.toHaveBeenCalled()
+  type('Bách Khoa'); await advance(199); expect(search).not.toHaveBeenCalled()
   await advance(1)
   expect(search).toHaveBeenCalledTimes(1)
   expect(search).toHaveBeenCalledWith('Bách Khoa', expect.any(AbortSignal))
@@ -28,7 +28,7 @@ it('waits 400ms after the last edit, requests once and shows at most five sugges
 })
 it('searches immediately on click and cancels the queued automatic request', async () => {
   render(<WorkplaceAddressSearch {...defaults} />)
-  type('Bách Khoa'); await advance(200)
+  type('Bách Khoa'); await advance(100)
   fireEvent.click(screen.getByRole('button', { name: 'Tìm kiếm' })); await advance(0)
   expect(search).toHaveBeenCalledTimes(1)
   expect(within(screen.getByRole('list', { name: 'Kết quả địa chỉ' })).getAllByRole('button')).toHaveLength(5)
@@ -39,7 +39,7 @@ it('lets explicit search replace an in-flight suggestion and ignores its late re
   search.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
   search.mockResolvedValueOnce(places('Kết quả mới'))
   render(<WorkplaceAddressSearch {...defaults} />)
-  type('Bách Khoa'); await advance(400)
+  type('Bách Khoa'); await advance(200)
   const oldSignal = search.mock.calls[0][1]
   expect(screen.getByRole('button', { name: 'Tìm kiếm' })).toBeEnabled()
   fireEvent.click(screen.getByRole('button', { name: 'Tìm kiếm' })); await advance(0)
@@ -61,13 +61,13 @@ it('waits until IME composition finishes before scheduling suggestions', async (
   const input = screen.getByLabelText('Tìm địa chỉ')
   fireEvent.compositionStart(input); type('Bách Khoa'); await advance(1000)
   expect(search).not.toHaveBeenCalled()
-  fireEvent.compositionEnd(input); await advance(399); expect(search).not.toHaveBeenCalled()
+  fireEvent.compositionEnd(input); await advance(199); expect(search).not.toHaveBeenCalled()
   await advance(1); expect(search).toHaveBeenCalledTimes(1)
 })
 it('resolves a suggestion without automatically searching the chosen address again', async () => {
   const onSelect = vi.fn()
   render(<WorkplaceAddressSearch {...defaults} onSelect={onSelect} />)
-  type('Bách Khoa'); await advance(400)
+  type('Bách Khoa'); await advance(200)
   fireEvent.click(screen.getByRole('button', { name: 'Gợi ý 0' })); await advance(0)
   expect(onSelect).toHaveBeenCalledWith({ latitude: 10.7726, longitude: 106.6579 })
   expect(screen.getByLabelText('Tìm địa chỉ')).toHaveValue('Địa chỉ đã chọn')

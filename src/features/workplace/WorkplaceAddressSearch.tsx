@@ -27,7 +27,7 @@ export function WorkplaceAddressSearch({ disabled, position, onSelect }: Props) 
     cancel(); setQuery(value); setResults(null); setError(''); setBusy(''); setChosen(null)
     const length = value.trim().length
     if (!locked.current && !composing.current && length >= 3 && length <= 200) {
-      debounce.current = window.setTimeout(() => { debounce.current = null; void search(value, 'suggestions') }, 400)
+      debounce.current = window.setTimeout(() => { debounce.current = null; void search(value, 'suggestions') }, 200)
     }
   }
   async function search(text = query, kind: 'suggestions' | 'results' = 'results') {
