@@ -6,7 +6,7 @@ export interface RegistrationShift {
 }
 export interface RegistrationWeek {
   weekStart: string; weekEnd: string; serverNow: string; opensAt: string; closesAt: string
-  editable: boolean; revision: string; shifts: RegistrationShift[]
+  editable: boolean; reopened: boolean; revision: string; shifts: RegistrationShift[]
 }
 export interface ShiftCatalog {
   items: RegistrationShift[]; page: number; size: number; totalElements: number; totalPages: number
@@ -18,7 +18,7 @@ export const saveRegistration = (weekStart: string, revision: string, shiftIds: 
 // The server supplies the clock and window; the device wall clock is never authoritative.
 export function canEdit(week: RegistrationWeek, elapsedMilliseconds: number) {
   const now = Date.parse(week.serverNow) + Math.max(0, elapsedMilliseconds)
-  return week.editable && now >= Date.parse(week.opensAt) && now < Date.parse(week.closesAt)
+  return week.editable && (week.reopened ? now >= Date.parse(week.closesAt) : now >= Date.parse(week.opensAt) && now < Date.parse(week.closesAt))
 }
 export function sameSelection(selected: RegistrationShift[], saved: RegistrationShift[]) {
   const ids = new Set(selected.map(shift => shift.id))

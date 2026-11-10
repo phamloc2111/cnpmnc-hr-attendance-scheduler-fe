@@ -83,9 +83,9 @@ export function RegistrationPage() {
         {data && !loading && <strong className="registration-range">{dateLabel(data.weekStart)} – {dateLabel(data.weekEnd)}</strong>}
       </section>
       {loading ? <p className="registration-card" role="status">Đang tải đăng ký ca…</p> : data && <section className={'registration-window ' + (editable || saving ? 'open' : 'closed')} aria-label="Thời gian đăng ký">
-        <span className="registration-window-icon"><HomeIcon name="clock" size={24} /></span><div><strong>{canEdit(data, performance.now() - receivedAt.current) ? 'Đang mở đăng ký' : 'Chỉ xem đăng ký'}</strong>
+        <span className="registration-window-icon"><HomeIcon name="clock" size={24} /></span><div><strong>{canEdit(data, performance.now() - receivedAt.current) ? data.reopened ? 'Quản lý đã mở lại đăng ký' : 'Đang mở đăng ký' : 'Chỉ xem đăng ký'}</strong>
           <p>Mở Chủ nhật {instantLabel(data.opensAt)} · Đóng {instantLabel(data.closesAt)} (UTC+7)</p>
-          <small>Được lưu và chỉnh sửa đến hết 23:59 Chủ nhật. Ngoài thời gian này chỉ được xem.</small></div>
+          <small>{data.reopened ? 'Bạn được chỉnh sửa tuần này cho đến khi quản lý khóa lại.' : 'Được lưu và chỉnh sửa đến hết 23:59 Chủ nhật. Nếu quản lý mở lại tuần khác, hãy chọn đúng tuần rồi tải lại.'}</small></div>
       </section>}
       {error && <div className="registration-card registration-error"><p role="alert">{error}</p>{!data && <button onClick={() => refresh(value => value + 1)}>Thử lại</button>}{reloadRequired && <p>Bản chọn của bạn vẫn được giữ. Bấm “Tải lại” để lấy dữ liệu mới trước khi chỉnh sửa tiếp.</p>}</div>}
       {notice && <p className="registration-notice" role="status">{notice}</p>}

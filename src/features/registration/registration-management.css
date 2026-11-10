@@ -1,0 +1,38 @@
+.registration-management-note { display:flex; align-items:center; gap:16px; padding:20px 24px; margin-bottom:22px; border:1px solid #dce8fb; border-radius:18px; background:#eef5ff; color:#0758c9; }
+.registration-management-note svg { flex-shrink:0; }
+.registration-management-note strong { font-size:14px; }
+.registration-management-note p { margin:6px 0 0; color:#65809f; font-size:12px; line-height:1.7; }
+.registration-management-filters { display:flex; align-items:end; flex-wrap:wrap; gap:12px; padding:22px; }
+.registration-management-filters > div { min-width:160px; flex:1 1 180px; }
+.registration-management-filters label { display:block; margin-bottom:7px; }
+.registration-management-filters input { width:100%; }
+.registration-management-filters button { min-height:44px; padding:10px 14px; font-size:12px; }
+.registration-management-week { display:flex; justify-content:center; align-items:center; gap:18px; padding:18px; border-top:1px solid #edf0f5; border-bottom:1px solid #edf0f5; text-align:center; }
+.registration-management-week strong { font-size:14px; color:#0758c9; }
+.registration-management-week small { display:block; margin-top:6px; color:#8796ad; font-size:10px; }
+.registration-management-week button { display:grid; place-items:center; width:38px; height:38px; padding:0; flex-shrink:0; }
+.registration-management-list { list-style:none; margin:0; padding:0 22px; }
+.registration-management-list > li { display:flex; align-items:center; gap:16px; padding:22px 0; border-bottom:1px solid #edf0f5; }
+.registration-employee-icon { display:grid; place-items:center; width:44px; height:44px; flex:0 0 44px; border-radius:14px; background:#f1f6fe; color:#0758c9; }
+.registration-employee-name { min-width:0; flex:1; overflow-wrap:anywhere; }
+.registration-employee-name h2 { margin:0; font-size:14px; }
+.registration-employee-name p { margin:5px 0 0; color:#7689a4; font-size:11px; }
+.registration-employee-name small { display:block; margin-top:6px; color:#8796ad; font-size:10px; }
+.registration-access-state { padding:6px 10px; border-radius:20px; background:#f1f4f8; color:#7588a2; font-size:10px; font-weight:650; white-space:nowrap; }
+.registration-access-state.state-REOPENED { background:#fff4cc; color:#946d00; }
+.registration-access-state.state-OPEN { background:#e9f8f0; color:#168662; }
+.registration-access-state.state-ACCOUNT_LOCKED { background:#fff0ee; color:#b42318; }
+.registration-access-actions { min-width:125px; text-align:right; }
+.registration-access-actions button { min-height:38px; padding:9px 15px; font-size:12px; }
+.registration-access-actions small { color:#8796ad; font-size:10px; }
+@media(max-width:700px) {
+  .registration-management-list > li { flex-wrap:wrap; gap:12px; }
+  .registration-employee-name { flex-basis:calc(100% - 60px); }
+  .registration-access-actions { margin-left:auto; }
+  .registration-management-list,.registration-management-filters { padding-inline:18px; }
+  .registration-management-filters > div { flex-basis:100%; }
+  .registration-management-note { padding:17px; align-items:start; }
+  .registration-management-week { gap:9px; }
+  .registration-management-week strong { font-size:12px; }
+  .registration-management-week small { font-size:9px; }
+}
