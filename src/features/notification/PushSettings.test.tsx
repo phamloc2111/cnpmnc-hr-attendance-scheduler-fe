@@ -22,7 +22,7 @@ const descriptors = {
   agent: Object.getOwnPropertyDescriptor(navigator, 'userAgent'),
 }
 const server = setupServer(
-  http.get(base + '/notifications/config', () => HttpResponse.json({ enabled: true, reminderTime: '22:00', timezone: 'Asia/Ho_Chi_Minh' })),
+  http.get(base + '/notifications/config', () => HttpResponse.json({ enabled: true, reminderTimes: ['08:00', '15:00', '20:00'], timezone: 'Asia/Ho_Chi_Minh' })),
   http.put(base + '/notifications/devices', async ({ request }) => { writes.push((await request.json() as { token: string }).token); return new HttpResponse(null, { status: 204 }) }),
   http.delete(base + '/notifications/devices', async ({ request }) => { deletes.push((await request.json() as { token: string }).token); return new HttpResponse(null, { status: 204 }) }),
   http.post(base + '/notifications/test', () => { tests++; return new HttpResponse(null, { status: 204 }) }),
@@ -82,10 +82,10 @@ it('explains insecure and unsupported browsers without breaking registration', (
   expect(screen.getByRole('button', { name: 'Bật thông báo' })).toBeDisabled()
 })
 it('keeps push disabled while the backend is unconfigured', async () => {
-  server.use(http.get(base + '/notifications/config', () => HttpResponse.json({ enabled: false, reminderTime: '21:30', timezone: 'Asia/Ho_Chi_Minh' })))
+  server.use(http.get(base + '/notifications/config', () => HttpResponse.json({ enabled: false, reminderTimes: ['08:00', '15:00', '20:00'], timezone: 'Asia/Ho_Chi_Minh' })))
   render(<PushSettings employeeId="employee-a" />)
   expect(await screen.findByRole('alert')).toHaveTextContent('chưa được cấu hình')
-  expect(screen.getByText(/21:30/)).toBeInTheDocument()
+  expect(screen.getByText(/08:00, 15:00, 20:00/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Bật thông báo' })).toBeDisabled()
 })
 it('does not retain an enabled preference if binding fails at the backend', async () => {

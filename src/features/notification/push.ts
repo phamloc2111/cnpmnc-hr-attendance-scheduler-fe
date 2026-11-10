@@ -5,7 +5,7 @@ import { writeBinding } from './binding'
 const storageKey = 'shiftsync.push-device'
 let generation = 0
 export interface PushDevice { employeeId: string; token: string }
-export interface PushConfig { enabled: boolean; reminderTime: string; timezone: string }
+export interface PushConfig { enabled: boolean; reminderTimes: string[]; timezone: string }
 export function storedDevice(): PushDevice | null {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(storageKey) ?? 'null')

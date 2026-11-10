@@ -8,7 +8,7 @@ export function PushSettings({ employeeId }: { employeeId: string }) {
   const [enabled, setEnabled] = useState(() => storedDevice()?.employeeId === employeeId && !!employeeId)
   const [ready, setReady] = useState(false), [busy, setBusy] = useState(false)
   const [error, setError] = useState(''), [notice, setNotice] = useState('')
-  const [reminderTime, setReminderTime] = useState('22:00')
+  const [reminderTimes, setReminderTimes] = useState(['08:00', '15:00', '20:00'])
   const [attempt, retry] = useState(0)
   const problem = supportProblem()
   const denied = 'Notification' in window && Notification.permission === 'denied'
@@ -17,7 +17,7 @@ export function PushSettings({ employeeId }: { employeeId: string }) {
     const controller = new AbortController(); setReady(false); setError('')
     loadPushConfig(controller.signal).then(config => {
       if (controller.signal.aborted) return
-      setReady(config.enabled); setReminderTime(config.reminderTime)
+      setReady(config.enabled); setReminderTimes(config.reminderTimes ?? ['08:00', '15:00', '20:00'])
       if (!config.enabled) setError('Thông báo đẩy chưa được cấu hình trên máy chủ.')
     }).catch((failure: unknown) => { if (!controller.signal.aborted) setError(message(failure)) })
     return () => controller.abort()
@@ -45,7 +45,7 @@ export function PushSettings({ employeeId }: { employeeId: string }) {
     catch (failure: unknown) { setError(message(failure)) }
     finally { setBusy(false) }
   }
-  return <div className="push-settings"><strong>Nhắc đăng ký ca</strong><p>Nhận thông báo khi mở cổng Chủ nhật và lúc {reminderTime} nếu bạn chưa chọn ca. Giờ Việt Nam (UTC+7).</p>
+  return <div className="push-settings"><strong>Nhắc đăng ký ca</strong><p>Nhận thông báo khi mở cổng Chủ nhật và lúc {reminderTimes.join(', ')} nếu bạn chưa chọn ca. Giờ Việt Nam (UTC+7).</p>
     {problem ? <p>{problem}</p> : !firebaseConfigured ? <p>Thông báo đang chờ cấu hình Firebase. Bạn vẫn có thể đăng ký ca bình thường.</p> : denied ? <p>Thông báo đã bị chặn. Mở cài đặt thông báo của trang trong trình duyệt để cho phép lại.</p> : null}
     {error && <p className="error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     <div className="push-settings-actions">{enabled ? <><button disabled={busy} onClick={() => { void disable() }}>Tắt thông báo</button><button disabled={busy || !ready || denied} onClick={() => { void test() }}>Gửi thử</button></> : <button disabled={busy || !ready || !!problem || denied || !firebaseConfigured} onClick={() => { void enable() }}>{busy ? 'Đang bật…' : 'Bật thông báo'}</button>}
