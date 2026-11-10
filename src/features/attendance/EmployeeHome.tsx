@@ -109,9 +109,10 @@ export function EmployeeHome({ name, email, onChangePassword, onLogout, loggingO
       <span className="home-check-icon"><HomeIcon name="clock" size={25} /></span><span className="home-check-copy"><strong>{attendanceType === 'CHECK_OUT' ? 'Chấm công ra ca' : 'Chấm công vào ca'}</strong><small>{selected ? selected.shiftName + ' · Bắt đầu ' + instantLabel(selected.startsAt).split(' ')[1] : error ? 'Tải lại ca để tiếp tục' : !data ? 'Đang tải ca làm' : 'Chưa có ca có thể điểm danh'}</small></span>
       <span className="home-check-action">{attendanceType === 'CHECK_OUT' ? 'Ra ca' : 'Vào ca'}<HomeIcon name="right" size={17} /></span>
     </button></div>
-    <nav className="home-bottom-nav" aria-label="Điều hướng nhân viên">
+    <nav className="home-bottom-nav registration-four-nav" aria-label="Điều hướng nhân viên">
       <button className="active" onClick={() => document.getElementById('employee-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><span><HomeIcon name="calendar" size={21} /></span>Lịch làm</button>
       <button className="home-nav-attendance" aria-label="Chuẩn bị điểm danh" disabled={!canAttend} onClick={() => selected && setAttendance(selected)}><span><HomeIcon name="clock" size={21} /></span>Chấm công</button>
+      <a href="#/registrations"><span><HomeIcon name="check" size={21} /></span>Đăng ký ca</a>
       <button onClick={() => setProfile(true)}><span><HomeIcon name="user" size={21} /></span>Cá nhân</button>
     </nav>
     {profile && <Modal title="Tài khoản của tôi" busy={false} onClose={() => setProfile(false)}><h3>{name}</h3>{email && <p>{email}</p>}<p>Nhân viên</p>

@@ -1,0 +1,69 @@
+.registration-page .registration-hero { min-height:240px; padding-bottom:45px; }
+.registration-home { display:flex; align-items:center; gap:5px; color:white; font-size:12px; }
+.registration-heading { position:relative; z-index:1; max-width:1116px; margin:30px auto 0; }
+.registration-heading p { margin-bottom:8px; font-size:10px; font-weight:800; letter-spacing:1.5px; color:#ffdf5d; }
+.registration-heading h1 { margin:0 0 8px; font-size:28px; letter-spacing:-.8px; }
+.registration-heading > span { font-size:12px; color:#dce9ff; }
+.registration-content { position:relative; z-index:2; width:min(100%,1180px); padding:0 18px 125px; margin:-24px auto 0; }
+.registration-card { padding:22px; margin-bottom:18px; background:white; border:1px solid #e3eaf4; border-radius:20px; box-shadow:0 5px 20px #18345a04; font-size:13px; }
+.registration-week { display:flex; align-items:end; gap:15px; flex-wrap:wrap; }
+.registration-week label { display:block; margin-bottom:7px; color:#6b7d97; font-size:11px; }
+.registration-week input { width:185px; min-height:44px; border:1px solid #dce5f2; border-radius:11px; background:#fff; padding:9px 12px; color:#10213f; }
+.registration-week-actions { display:flex; gap:8px; }
+.registration-page button:not(.registration-save) { color:#0758c9; border-color:#dce5f2; border-radius:11px; background:white; }
+.registration-week-actions button { display:flex; align-items:center; gap:5px; min-height:44px; padding:9px 12px; font-size:12px; }
+.registration-range { margin-left:auto; align-self:center; font-size:13px; color:#0758c9; }
+.registration-window { display:flex; align-items:center; gap:15px; padding:20px 22px; margin-bottom:20px; border:1px solid #d7e6ff; border-radius:18px; background:#eef5ff; }
+.registration-window.closed { background:#fff8e2; border-color:#f4e9ba; }
+.registration-window-icon { display:grid; place-items:center; width:46px; height:46px; flex:0 0 46px; border-radius:14px; background:white; color:#0758c9; }
+.registration-window strong { font-size:14px; }
+.registration-window p { margin:5px 0; font-size:12px; color:#50678c; }
+.registration-window small { font-size:10px; color:#6b7d97; }
+.registration-columns { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); align-items:start; gap:20px; }
+.registration-section-heading { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:20px; color:#0758c9; }
+.registration-section-heading h2 { margin:0 0 4px; font-size:17px; color:#10213f; }
+.registration-section-heading p { margin:0; font-size:11px; color:#8190a6; }
+.registration-options { display:grid; gap:12px; }
+.registration-option { display:flex; align-items:start; gap:12px; padding:17px; border:1px solid #e3eaf4; border-radius:14px; background:#fff; cursor:pointer; }
+.registration-option.selected { background:#f1f6ff; border-color:#87b0ed; }
+.registration-option:has(input:disabled) { cursor:default; }
+.registration-option input { accent-color:#0758c9; width:19px; height:19px; margin:3px 0 0; flex:0 0 19px; }
+.registration-option > span { display:grid; gap:5px; min-width:0; overflow-wrap:anywhere; }
+.registration-option strong { font-size:14px; }
+.registration-time { font-weight:700; font-size:13px; color:#0758c9; }
+.registration-option small,.registration-option > span > span:not(.registration-time) { color:#7c899d; font-size:10px; }
+.registration-option .registration-time small { color:#a17b08; }
+.registration-count { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; background:#ffdf5d; color:#0b4bac; font-weight:800; }
+.registration-explanation { padding:13px; border-radius:12px; background:#f5f7fb; color:#647895; font-size:11px; line-height:1.7; }
+.registration-explanation a { color:#0758c9; font-weight:700; }
+.registration-selection ul { list-style:none; padding:0; margin:18px 0; display:grid; gap:10px; }
+.registration-selection li { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid #edf0f5; }
+.registration-selection li > div { min-width:0; overflow-wrap:anywhere; }
+.registration-selection li strong { display:block; font-size:12px; }
+.registration-selection li small { display:block; margin-top:4px; font-size:10px; color:#7c899d; }
+.registration-selection li button { padding:7px; flex-shrink:0; }
+.registration-empty { padding:20px 0; color:#8190a6; font-size:12px; text-align:center; }
+.registration-save { width:100%; min-height:46px; padding:12px; border:0; border-radius:13px; background:#0758c9; color:white; font-weight:700; font-size:13px; }
+.registration-save:disabled { opacity:.45; }
+.registration-save-note { display:block; margin-top:10px; color:#7c899d; text-align:center; font-size:10px; }
+.registration-pagination { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:18px; font-size:10px; color:#7c899d; }
+.registration-pagination button { padding:8px; font-size:10px; }
+.registration-error { color:#be3636; }
+.registration-error p { margin-bottom:10px; }
+.registration-notice { padding:15px 20px; border-radius:13px; color:#136f58; background:#e8f7f1; font-size:13px; }
+.home-bottom-nav.registration-four-nav { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.registration-four-nav > a,.registration-nav > a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; color:#8792a5; font-size:10px; font-weight:650; }
+.registration-four-nav > a > span,.registration-nav > a > span { display:grid; place-items:center; height:30px; }
+.registration-page .registration-nav > a.active { color:#0758c9; background:transparent; }
+.registration-nav > a.active > span { width:43px; height:34px; border-radius:12px; background:#ffd43b; color:#0a408f; }
+@media(max-width:700px) {
+  .registration-columns { grid-template-columns:minmax(0,1fr); gap:0; }
+  .registration-content { padding-inline:16px; }
+  .registration-card { padding:18px; }
+  .registration-week { gap:12px; }
+  .registration-week > div:first-child { flex:1 0 100%; }
+  .registration-week input { width:100%; }
+  .registration-range { margin-left:0; font-size:11px; flex:1 0 100%; }
+  .registration-window { padding:16px; gap:12px; align-items:start; }
+  .registration-window p { font-size:11px; }
+}

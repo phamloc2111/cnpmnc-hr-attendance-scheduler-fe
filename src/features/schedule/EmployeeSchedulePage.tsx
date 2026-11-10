@@ -50,8 +50,9 @@ export function EmployeeSchedulePage({ name, email, onChangePassword, onLogout, 
       </section>
       <p className="employee-week-note">Bấm vào ca để xem chi tiết. Ca qua đêm được hiển thị ở cả hai ngày.</p>
     </div>
-    <nav className="home-bottom-nav employee-week-nav" aria-label="Điều hướng nhân viên"><a href="#/employee"><span><HomeIcon name="clock" size={21} /></span>Trang chủ</a>
+    <nav className="home-bottom-nav registration-four-nav employee-week-nav" aria-label="Điều hướng nhân viên"><a href="#/employee"><span><HomeIcon name="clock" size={21} /></span>Trang chủ</a>
       <a className="active" href="#/my-schedule" aria-current="page"><span><HomeIcon name="calendar" size={21} /></span>Lịch của tôi</a>
+      <a href="#/registrations"><span><HomeIcon name="check" size={21} /></span>Đăng ký ca</a>
       <button onClick={() => setProfile(true)}><span><HomeIcon name="user" size={21} /></span>Cá nhân</button></nav>
     {detail && <Modal title="Chi tiết ca làm" busy={false} onClose={() => setDetail(null)}><h3>{detail.shiftName}</h3><p>{dateLabel(detail.workDate)}</p><p>{instantLabel(detail.startsAt)} → {instantLabel(detail.endsAt)}</p><p>{detail.requiredPosition || 'Chưa có vị trí'}</p><p>Nghỉ {detail.breakMinutes} phút · Làm {detail.workingMinutes} phút</p></Modal>}
     {profile && <Modal title="Tài khoản của tôi" busy={false} onClose={() => setProfile(false)}><h3>{name}</h3><p>{email}</p><p>Nhân viên</p><div className="modal-actions"><button onClick={() => { setProfile(false); onChangePassword() }}>Đổi mật khẩu</button><button disabled={loggingOut} onClick={onLogout}>Đăng xuất</button></div></Modal>}

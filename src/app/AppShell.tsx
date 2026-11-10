@@ -41,10 +41,11 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     return () => window.removeEventListener('keydown', close)
   }, [])
   const employee = role === 'EMPLOYEE'
-  const home = employee && ['/employee', '/my-schedule'].includes(path)
+  const home = employee && ['/employee', '/my-schedule', '/registrations'].includes(path)
   const links: NavigationItem[] = [{ path: homePaths[role], label: 'Tổng quan', icon: 'dashboard' }]
   if (role === 'ADMIN') links.push({ path: '/management', label: 'Không gian quản lý', icon: 'team' })
   links.push(...(employee ? [
+    { path: '/registrations', label: 'Đăng ký ca', icon: 'check' as const },
     { path: '/my-schedule', label: 'Lịch của tôi', icon: 'calendar' as const },
     { path: '/employee', label: 'Chấm công', icon: 'clock' as const },
   ] : [
@@ -64,7 +65,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     {!home && <aside className="sidebar" ref={sidebar} id="workspace-navigation" aria-label="Điều hướng không gian làm việc">
       <div className="shell-brand-row"><a className="brand" href={'#' + homePaths[role]}><span className="brand-mark">S</span>ShiftSync</a><button className="shell-close-menu" aria-label="Đóng menu" onClick={() => setMenuOpen(false)}><HomeIcon name="close" /></button></div>
       <p className="nav-label">KHÔNG GIAN LÀM VIỆC</p><nav aria-label="Menu chính">{links.map(navLink)}
-        {employee ? <button disabled><HomeIcon name="calendar" size={19} /><span>Lịch rảnh</span><small>Sắp có</small></button> : <button disabled><HomeIcon name="report" size={19} /><span>Báo cáo</span><small>Sắp có</small></button>}
+        {!employee && <button disabled><HomeIcon name="report" size={19} /><span>Báo cáo</span><small>Sắp có</small></button>}
         {role === 'ADMIN' && <><p className="nav-label">QUẢN TRỊ HỆ THỐNG</p>{navLink({ path: '/accounts', label: 'Tài khoản', icon: 'shield' })}<button disabled><HomeIcon name="settings" size={19} /><span>Cài đặt</span><small>Sắp có</small></button></>}
       </nav>
       <div className="sidebar-user"><span className="avatar">{initials}</span><div><strong>{name}</strong><small>{roleLabels[role]}</small></div></div>
