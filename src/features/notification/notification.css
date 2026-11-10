@@ -1,0 +1,8 @@
+.push-settings > strong { font-size:13px; color:#10213f; }
+.push-settings p { font-size:11px; line-height:1.7; margin:9px 0; }
+.push-settings-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.push-settings-actions button { padding:8px 10px; border:1px solid #dce8fb; border-radius:10px; color:#0758c9; background:#f3f7fe; font-size:11px; }
+.push-settings-actions button:disabled { opacity:.5; }
+.push-toast { position:fixed; z-index:20; top:18px; right:18px; display:flex; gap:15px; max-width:min(360px,calc(100vw - 36px)); padding:18px; border:1px solid #dce8fb; border-radius:17px; background:#fff; color:#10213f; box-shadow:0 12px 40px #10213f25; font-family:Manrope,'Segoe UI',sans-serif; }
+.push-toast strong { font-size:13px; }.push-toast p { font-size:12px; line-height:1.6; }.push-toast a { color:#0758c9; font-size:12px; font-weight:700; }
+.push-toast button { align-self:start; min-width:28px; padding:0; border:0; background:transparent; color:#6b7d97; font-size:20px; }

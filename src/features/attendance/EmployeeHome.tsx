@@ -9,12 +9,13 @@ import { InstallApp } from './InstallApp'
 import { loadHomeSchedules, shiftSummary, visibleSchedules } from './home'
 import { instantLabel } from '../../shared/utils/dates'
 import { HomeIcon } from './HomeIcon'
+import { PushSettings } from '../notification'
 import { MonthSchedule } from './MonthSchedule'
 import './manrope.css'
 import './home.css'
 
-export function EmployeeHome({ name, email, onChangePassword, onLogout, loggingOut = false }: {
-  name: string; email?: string; onChangePassword?: () => void; onLogout?: () => void; loggingOut?: boolean
+export function EmployeeHome({ name, email, employeeId, onChangePassword, onLogout, loggingOut = false }: {
+  name: string; email?: string; employeeId?: string; onChangePassword?: () => void; onLogout?: () => void; loggingOut?: boolean
 }) {
   const [clock, setClock] = useState(() => Date.now())
   const [today, setToday] = useState(vietnamToday)
@@ -73,7 +74,7 @@ export function EmployeeHome({ name, email, onChangePassword, onLogout, loggingO
           <button aria-label="Thông báo" aria-expanded={notifications} onClick={() => setNotifications(value => !value)}><HomeIcon name="bell" size={20} /></button>
         </div>
       </div>
-      {notifications && <aside className="home-notification"><strong>Thông báo</strong><p>Thông báo về ca làm sẽ được cập nhật tại đây.</p></aside>}
+      {notifications && <aside className="home-notification"><PushSettings employeeId={employeeId ?? ''} /></aside>}
       <div className="home-greeting"><span className="home-avatar">{initials}</span><div><p>{greeting}</p><h1>Xin chào, {name}.</h1></div></div>
       <div className="home-work-summary"><div><h2>CA LÀM HÔM NAY</h2>
         <strong>{selected ? instantLabel(selected.startsAt).split(' ')[1] + ' — ' + instantLabel(selected.endsAt).split(' ')[1] : error ? 'Chưa tải được ca làm' : !data ? 'Đang tải ca làm…' : 'Hôm nay chưa có ca'}</strong>

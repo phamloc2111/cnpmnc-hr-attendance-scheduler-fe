@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { clearSession, readSession, request, saveSession } from '../../shared/api/client'
+import { disconnectPush } from '../notification'
 import type { LoginResponse, User } from './types'
 
 type AuthState = {
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return response.user
   }, [])
   const logout = useCallback(async () => {
+    void disconnectPush()
     try { await request<void>('/auth/logout', { method: 'POST' }) }
     finally { clearSession() }
   }, [])
