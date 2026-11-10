@@ -80,7 +80,7 @@ export type ResultStatus = 'PENDING' | 'ON_TIME' | 'LATE' | 'ABSENT' | 'EARLY_LE
 export type AttendanceResult = {
   scheduleId: string; employeeId: string; employeeName: string; workDate: string; shiftName: string
   startsAt: string; endsAt: string; checkInAt: string | null; checkOutAt: string | null
-  arrival: ResultStatus; departure: ResultStatus; overall: ResultStatus; lateMinutes: number; earlyMinutes: number
+  arrival: ResultStatus; departure: ResultStatus; overall: ResultStatus; lateMinutes: number; earlyMinutes: number; explanationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null
 }
 export type AttendanceResultPage = { items: AttendanceResult[]; page: number; size: number; totalElements: number; totalPages: number }
 export const resultLabels: Record<ResultStatus, string> = {

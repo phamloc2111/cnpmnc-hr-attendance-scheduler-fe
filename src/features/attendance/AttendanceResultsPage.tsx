@@ -32,7 +32,7 @@ export function AttendanceResultsPage() {
           <div><h2>{row.employeeName}</h2><p>{row.shiftName} · {dateLabel(row.workDate)}</p><small>{instantLabel(row.startsAt)} → {instantLabel(row.endsAt)}</small></div>
           <div><h3>Vào ca</h3><span className={'attendance-badge status-' + row.arrival}>{resultLabels[row.arrival]}</span><p>{row.checkInAt ? instantLabel(row.checkInAt) : 'Chưa có lượt vào'}</p>{row.lateMinutes > 0 && <small>Trễ {row.lateMinutes} phút</small>}</div>
           <div><h3>Ra ca</h3><span className={'attendance-badge status-' + row.departure}>{resultLabels[row.departure]}</span><p>{row.checkOutAt ? instantLabel(row.checkOutAt) : 'Chưa có lượt ra'}</p>{row.earlyMinutes > 0 && <small>Về sớm {row.earlyMinutes} phút</small>}</div>
-          <div><h3>Kết quả ca</h3><span className={'attendance-badge status-' + row.overall}>{resultLabels[row.overall]}</span></div>
+          <div><h3>Kết quả ca</h3><span className={'attendance-badge status-' + row.overall}>{resultLabels[row.overall]}</span>{row.explanationStatus && <small>Giải trình: {row.explanationStatus==='APPROVED'?'Đã duyệt':row.explanationStatus==='REJECTED'?'Từ chối':'Chờ duyệt'}</small>}</div>
         </article>)}</div><div className="pagination"><button disabled={page === 0} onClick={() => setPage(value => value - 1)}>Trang trước</button><span>Trang {page + 1} / {Math.max(1, data.totalPages)}</span><button disabled={page + 1 >= data.totalPages} onClick={() => setPage(value => value + 1)}>Trang sau</button></div></>}
     </section>
   </main>
