@@ -15,7 +15,11 @@ const server=setupServer(
   http.get(base+'/diligence',({request})=>{const url=new URL(request.url);requests.push(url);return HttpResponse.json(list(url))}),
   http.get(base+'/diligence/employees/:id',({params,request})=>{const url=new URL(request.url);return HttpResponse.json({ ...list(url),employee:params.id==='an'?an:binh,totalElements:1,totalPages:1,items:[{workDate:'2026-11-03',shifts:[{id:'schedule',name:'Ca sáng',startsAt:'2026-11-03T01:00:00Z',endsAt:'2026-11-03T09:00:00Z',checkInAt:'2026-11-03T01:35:00Z',checkOutAt:'2026-11-03T09:00:00Z'}],components:[{code:'LATE',points:20,scheduleId:'schedule'}],rawPoints:20,points:20,capped:false,disciplinaryReferral:false,pendingExplanation:false,explanationDeadline:'2026-11-05T09:00:00Z',absent:false,missing:false,review:{employeeId:params.id,workDate:'2026-11-03',absence:'AUTO',earlyLeaveApproved:false,missing:'AUTO',note:'',revision:0,reviewedBy:null,reviewedAt:null}}]})}),
 )
-beforeAll(()=>server.listen({onUnhandledFrame:'error'}))
+beforeAll(()=>{
+  HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')}
+  HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}
+  server.listen({onUnhandledFrame:'error'})
+})
 beforeEach(()=>{requests=[]})
 afterEach(()=>server.resetHandlers())
 afterAll(()=>server.close())
@@ -53,19 +57,21 @@ it('paginates employees on the server and resets pagination on month changes',as
 it('opens each employee detail with server check-in times and deduction history',async()=>{
   render(<DiligencePage />);await screen.findByText('An')
   fireEvent.click(screen.getByRole('button',{name:'Xem chi tiết Binh'}))
-  const detail=screen.getByRole('region',{name:'Chi tiết chuyên cần'})
+  const detail=screen.getByRole('dialog',{name:'Chi tiết chuyên cần'})
+  expect(detail).toHaveAttribute('open')
   expect(await within(detail).findByText(/Ca sáng/)).toBeInTheDocument()
   expect(within(detail).getByText('−20 điểm')).toBeInTheDocument()
   expect(within(detail).getByText(/Đi trễ: −20 điểm/)).toBeInTheDocument()
   expect(within(detail).getByText(content => content.includes('70/100 điểm'))).toBeInTheDocument()
-  fireEvent.click(within(detail).getByRole('button',{name:'Đóng chi tiết'}))
-  expect(screen.queryByRole('region',{name:'Chi tiết chuyên cần'})).not.toBeInTheDocument()
+  fireEvent.click(within(detail).getByRole('button',{name:'Đóng'}))
+  expect(screen.queryByRole('dialog',{name:'Chi tiết chuyên cần'})).not.toBeInTheDocument()
 })
 it('clears the previous employee detail when switching months',async()=>{
   render(<DiligencePage />);await screen.findByText('An')
   fireEvent.click(screen.getByRole('button',{name:'Xem chi tiết An'}));await screen.findByText(/Ca sáng/)
+  fireEvent.click(within(screen.getByRole('dialog',{name:'Chi tiết chuyên cần'})).getByRole('button',{name:'Đóng'}))
   fireEvent.change(screen.getByLabelText('Tháng tính điểm'),{target:{value:'2026-01'}})
-  expect(screen.queryByRole('region',{name:'Chi tiết chuyên cần'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('dialog',{name:'Chi tiết chuyên cần'})).not.toBeInTheDocument()
   await screen.findByText(/Kết quả cuối tháng/)
 })
 it('retries failed loading without showing incorrect zero scores',async()=>{
@@ -80,7 +86,7 @@ it('handles revoked detail access without exposing the previously selected emplo
   server.use(http.get(base+'/diligence/employees/:id',()=>HttpResponse.json({message:'Bạn không có quyền xem nhân viên này.'},{status:403})))
   render(<DiligencePage />);await screen.findByText('An')
   fireEvent.click(screen.getByRole('button',{name:'Xem chi tiết An'}))
-  const detail=screen.getByRole('region',{name:'Chi tiết chuyên cần'})
+  const detail=screen.getByRole('dialog',{name:'Chi tiết chuyên cần'})
   expect(await within(detail).findByRole('alert')).toHaveTextContent('không có quyền')
   expect(within(detail).queryByText('Ca sáng')).not.toBeInTheDocument()
 })
@@ -103,4 +109,13 @@ it('submits manager-confirmed leave with a revision and refreshes monthly score'
   await waitFor(()=>expect(writes).toHaveLength(1))
   expect(writes[0]).toMatchObject({absence:'APPROVED_LEAVE',missing:'AUTO',revision:0,note:'Đơn nghỉ phép đã duyệt'})
   await waitFor(()=>expect(screen.queryByRole('region',{name:'Xác minh chuyên cần'})).not.toBeInTheDocument())
+})
+
+it('closes the employee detail when the dialog receives Escape', async()=>{
+  render(<DiligencePage />);await screen.findByText('An')
+  fireEvent.click(screen.getByRole('button',{name:'Xem chi tiết An'}))
+  const detail=screen.getByRole('dialog',{name:'Chi tiết chuyên cần'})
+  expect(detail).toHaveAttribute('open')
+  fireEvent(detail,new Event('cancel',{cancelable:true}))
+  expect(screen.queryByRole('dialog',{name:'Chi tiết chuyên cần'})).not.toBeInTheDocument()
 })

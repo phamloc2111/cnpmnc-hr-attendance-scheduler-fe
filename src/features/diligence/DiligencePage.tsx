@@ -1,5 +1,6 @@
 import { useEffect,useState } from 'react'
 import { HomeIcon } from '../../shared/components/HomeIcon'
+import { Modal } from '../../shared/components/Modal'
 import { dateLabel,instantLabel,vietnamToday } from '../../shared/utils/dates'
 import { loadDiligence,loadEmployeeDiligence,loadReview,saveReview } from './api'
 import type { Absence,DayEntry,EmployeeMonth,Missing,MonthPage,Policy,Review,ReviewHistory,ReviewRequest,Summary } from './api'
@@ -37,15 +38,16 @@ export function DiligencePage(){
         <Pager page={page} totalPages={data.totalPages} onChange={setPage} label={data.totalElements+' nhân viên'}/>
       </>}
     </section>
-    {selected&&<section className="account-card diligence-detail" aria-label="Chi tiết chuyên cần">
-      <div className="diligence-detail-heading"><h2>Chi tiết điểm chuyên cần</h2><button onClick={()=>setSelected(null)}>Đóng chi tiết</button></div>
+    {selected&&<Modal title="Chi tiết chuyên cần" busy={false} onClose={()=>{setSelected(null);setReviewDay(null)}} className="diligence-dialog">
+      <section className="diligence-detail" aria-label="Chi tiết chuyên cần">
+      {reviewDay&&<ReviewPanel key={selected+reviewDay.workDate} employeeId={selected} day={reviewDay} onClose={()=>setReviewDay(null)} onSaved={()=>{setReviewDay(null);refresh(value=>value+1)}}/>}
       {detailError?<div className="table-state"><p role="alert" className="error">{detailError}</p><button onClick={()=>refresh(value=>value+1)}>Thử lại chi tiết</button></div>:!detail?<p className="table-state" role="status">Đang tải chi tiết…</p>:<>
         <div className="diligence-detail-summary"><div><h3>{detail.employee.employeeName}</h3><p>{monthLabel(detail.month)} · {detail.employee.score}/100 điểm · Trừ {detail.employee.deductedPoints} điểm</p></div><Reward employee={detail.employee} finalized={detail.finalized}/></div>
         {!detail.items.length?<div className="table-state"><h3>Chưa có ca làm trong tháng</h3><p>Điểm bắt đầu là 100.</p></div>:<ul className="diligence-entries">{detail.items.map(day=><li key={day.workDate} className="diligence-day"><div className="diligence-day-main"><h3>{dateLabel(day.workDate)}</h3><div className="diligence-shifts">{day.shifts.map(shift=><p key={shift.id}>{shift.name} · {instantLabel(shift.startsAt)}–{instantLabel(shift.endsAt)}<br/>Vào: {shift.checkInAt?instantLabel(shift.checkInAt):'Thiếu'} · Ra: {shift.checkOutAt?instantLabel(shift.checkOutAt):'Thiếu'}</p>)}</div><div className="diligence-components">{day.components.length?day.components.map((part,index)=><span key={index}>{componentLabel(part.code)}: {part.points?('−'+part.points):'0'} điểm</span>):<span>Chưa có lỗi</span>}</div>{day.pendingExplanation&&<small>Chờ giải trình đến {instantLabel(day.explanationDeadline)}</small>}{day.absent&&day.review.absence==='AUTO'&&<small>Vắng mặt tự ghi nhận · cần xác minh lý do</small>}{day.disciplinaryReferral&&<small>Cần chuyển xử lý kỷ luật từ ngày vắng thứ ba</small>}{day.capped&&<small>Trước giới hạn: {day.rawPoints} điểm · đã áp dụng trần 20 điểm/ngày</small>}</div><div className="diligence-day-actions"><strong>{day.points?'−'+day.points+' điểm':'Không trừ điểm'}</strong><button type="button" onClick={()=>setReviewDay(day)}>Xác minh</button></div></li>)}</ul>}
         <Pager page={detailPage} totalPages={detail.totalPages} onChange={setDetailPage} label={detail.totalElements+' ngày có ca'}/>
       </>}
-    </section>}
-    {selected&&reviewDay&&<ReviewPanel key={selected+reviewDay.workDate} employeeId={selected} day={reviewDay} onClose={()=>setReviewDay(null)} onSaved={()=>{setReviewDay(null);refresh(value=>value+1)}}/>}
+      </section>
+    </Modal>}
   </main>
 }
 function ReviewPanel({employeeId,day,onClose,onSaved}:{employeeId:string;day:DayEntry;onClose:()=>void;onSaved:()=>void}){
