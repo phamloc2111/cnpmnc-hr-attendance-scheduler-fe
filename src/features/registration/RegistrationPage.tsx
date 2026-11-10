@@ -4,10 +4,11 @@ import { HomeIcon } from '../../shared/components/HomeIcon'
 import { dateLabel, instantLabel, monday, timeLabel } from '../../shared/utils/dates'
 import { canEdit, loadCatalog, loadRegistration, sameSelection, saveRegistration } from './api'
 import type { RegistrationShift, RegistrationWeek, ShiftCatalog } from './api'
+import { registrationWeek } from '../notification'
 import './registration.css'
 
 export function RegistrationPage() {
-  const [week, setWeek] = useState('')
+  const [week, setWeek] = useState(() => registrationWeek(new URLSearchParams(window.location.search).get('registrationWeek')))
   const [attempt, refresh] = useState(0)
   const [data, setData] = useState<RegistrationWeek | null>(null)
   const [selected, setSelected] = useState<RegistrationShift[]>([])

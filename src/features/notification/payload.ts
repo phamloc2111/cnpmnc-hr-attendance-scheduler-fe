@@ -1,0 +1,15 @@
+export interface PushMessage { employeeId: string; title: string; body: string; weekStart: string; expiresAt: string; tag: string }
+export function registrationWeek(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return ''
+  const date = new Date(value + 'T00:00:00Z')
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value && date.getUTCDay() === 1 ? value : ''
+}
+export function pushMessage(value: unknown, now = Date.now()): PushMessage | null {
+  if (!value || typeof value !== 'object' || !('data' in value) || !value.data || typeof value.data !== 'object') return null
+  const data = value.data
+  for (const key of ['employeeId', 'title', 'body', 'weekStart', 'expiresAt', 'tag']) if (!(key in data) || typeof Reflect.get(data, key) !== 'string') return null
+  const message = data as PushMessage
+  if (!registrationWeek(message.weekStart) || !message.employeeId || !Number.isFinite(Date.parse(message.expiresAt)) || Date.parse(message.expiresAt) <= now) return null
+  return { ...message, title: message.title.slice(0, 120), body: message.body.slice(0, 400), tag: message.tag.slice(0, 120) }
+}
+export function notificationUrl(week: string) { return '/?registrationWeek=' + encodeURIComponent(registrationWeek(week)) + '#/registrations' }
