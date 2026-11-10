@@ -56,6 +56,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     { path: '/attendance', label: 'Bảng công', icon: 'clock' as const },
     { path: '/attendance-results', label: 'Phân loại ca làm', icon: 'check' as const },
   ]))
+  if (role === 'MANAGER') links.push({ path: '/registrations-management', label: 'Đăng ký ca', icon: 'check' })
   const current = links.find(link => link.path === path)?.label ?? (path === '/accounts' ? 'Tài khoản' : 'Không gian làm việc')
   const initials = name.trim().split(/\s+/).slice(-2).map(word => word[0]).join('').toLocaleUpperCase('vi')
   function navLink(item: NavigationItem) {

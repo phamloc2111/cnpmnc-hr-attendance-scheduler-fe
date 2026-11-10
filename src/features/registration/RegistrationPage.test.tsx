@@ -29,7 +29,7 @@ const server = setupServer(
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 beforeEach(() => {
   writes = []; role = 'EMPLOYEE'
-  week = { weekStart: '2026-11-16', weekEnd: '2026-11-22', serverNow: '2026-11-15T05:00:00Z', opensAt: '2026-11-14T17:00:00Z', closesAt: '2026-11-15T17:00:00Z', editable: true, revision: 'a'.repeat(64), shifts: [] }
+  week = { weekStart: '2026-11-16', weekEnd: '2026-11-22', serverNow: '2026-11-15T05:00:00Z', opensAt: '2026-11-14T17:00:00Z', closesAt: '2026-11-15T17:00:00Z', editable: true, reopened: false, revision: 'a'.repeat(64), shifts: [] }
 })
 afterEach(() => { server.resetHandlers(); vi.restoreAllMocks(); sessionStorage.clear(); window.location.hash = '' })
 afterAll(() => server.close())
