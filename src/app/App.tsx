@@ -11,6 +11,7 @@ import { AccountsPage } from '../features/accounts'
 import { SchedulePage, EmployeeSchedulePage } from '../features/schedule'
 import { AttendancePage, AttendanceResultsPage, EmployeeHome } from '../features/attendance'
 import { WorkplacePage } from '../features/workplace'
+import { RegistrationPage } from '../features/registration'
 import { PositionsPage } from '../features/positions'
 
 const routes: Record<string, { roles: Role[]; endpoint: string }> = {
@@ -19,6 +20,7 @@ const routes: Record<string, { roles: Role[]; endpoint: string }> = {
   '/schedules': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
   '/attendance-results': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
   '/attendance': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
+  '/registrations': { roles: ['EMPLOYEE'], endpoint: '' },
   '/my-schedule': { roles: ['EMPLOYEE'], endpoint: '' },
   '/accounts': { roles: ['ADMIN'], endpoint: '' },
   '/employees': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
@@ -58,7 +60,7 @@ export function App() {
     onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }}>
       {passwordNotice && <p className="notice workspace-notice" role="status">{passwordNotice}</p>}
       {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} onSaved={() => { setChangingPassword(false); setPasswordNotice('Đổi mật khẩu thành công.') }} />}
-      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/workplace' ? <WorkplacePage /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/my-schedule' ? <EmployeeSchedulePage name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/schedules' ? <SchedulePage /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/attendance' ? <AttendancePage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><div className="page-heading"><div><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1></div></div><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
+      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/registrations' ? <RegistrationPage /> : path === '/workplace' ? <WorkplacePage /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/my-schedule' ? <EmployeeSchedulePage name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/schedules' ? <SchedulePage /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/attendance' ? <AttendancePage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><div className="page-heading"><div><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1></div></div><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
   </AppShell>
 }
 

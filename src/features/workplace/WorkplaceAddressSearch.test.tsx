@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
@@ -23,12 +22,12 @@ afterEach(() => { server.resetHandlers(); vi.restoreAllMocks() })
 afterAll(() => server.close())
 const defaults = { disabled: false, position: null, onSelect: vi.fn() }
 function enter(query = 'Bách Khoa & Quận 10') { fireEvent.change(screen.getByLabelText('Tìm địa chỉ'), { target: { value: query } }) }
-it('does not request on typing, then searches and resolves only the selected address', async () => {
+it('searches immediately before the debounce and resolves only the selected address', async () => {
   const onSelect = vi.fn()
   const { rerender } = render(<WorkplaceAddressSearch {...defaults} onSelect={onSelect} />)
   enter(); expect(searches).toBe(0); expect(details).toBe(0)
-  await userEvent.setup().click(screen.getByRole('button', { name: 'Tìm kiếm' }))
-  await userEvent.setup().click(await screen.findByRole('button', { name: 'Đại học Bách Khoa, TP.HCM' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Tìm kiếm' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Đại học Bách Khoa, TP.HCM' }))
   await waitFor(() => expect(onSelect).toHaveBeenCalledWith({ latitude: 10.7726, longitude: 106.6579 }))
   expect(searches).toBe(1); expect(details).toBe(1)
   rerender(<WorkplaceAddressSearch {...defaults} position={{ latitude: 10.7726, longitude: 106.6579 }} onSelect={onSelect} />)
