@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '../../shared/components/Modal'
 import { addDays, vietnamToday } from '../../shared/utils/dates'
 import type { WorkSchedule } from '../schedule'
+import { OwnPriorityCard } from '../priority/OwnPriorityCard'
 import { CaptureAttendanceModal } from './CaptureAttendanceModal'
 import { listMyAttendance } from './api'
 import type { AttendanceEvent } from './types'
@@ -104,6 +105,7 @@ export function EmployeeHome({ name, email, employeeId, onChangePassword, onLogo
       })}</ul>}
     </section>
     <p className="home-explanation-link"><a href="#/my-explanations">Giải trình chấm công và xem kết quả duyệt →</a></p>
+    <OwnPriorityCard />
     <MonthSchedule today={today} clock={clock} revision={revision} />
     <div className="home-install-region"><InstallApp /></div>
     </div>
