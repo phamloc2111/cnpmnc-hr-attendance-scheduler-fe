@@ -12,7 +12,7 @@ export function Modal({ title, busy, onClose, children }: {
     return () => dialog.close()
   }, [])
   return <dialog className="modal" ref={ref} aria-labelledby={titleId}
-    onCancel={event => { event.preventDefault(); if (!busy) onClose() }}>
+    onCancel={event => { if (event.target !== event.currentTarget) return; event.preventDefault(); if (!busy) onClose() }}>
     <div className="modal-header"><h2 id={titleId}>{title}</h2>
       <button type="button" aria-label="Đóng" disabled={busy} onClick={onClose}>×</button>
     </div>
