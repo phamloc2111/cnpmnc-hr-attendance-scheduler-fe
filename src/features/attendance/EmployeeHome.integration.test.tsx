@@ -21,6 +21,7 @@ let role = 'EMPLOYEE'
 let now = Date.parse('2026-11-09T00:30:00Z')
 const server = setupServer(
   http.get(base + '/attendance/events', () => HttpResponse.json([])),
+  http.get(base + '/diligence/me', () => HttpResponse.json({periodType:'MONTH',from:'2026-11-01',to:'2026-11-30',timezone:'Asia/Ho_Chi_Minh',asOf:'2026-11-09T00:30:00Z',finalized:false,score:100,deductedPoints:0,workedMinutes:0,days:[]})),
   http.get(base + '/auth/me', () => HttpResponse.json({ id: 'employee', email: 'an@example.com', displayName: 'Nguyễn An', role })),
   http.get(base + '/work-schedules', ({ request }) => {
     requests.push(new URL(request.url).searchParams)
