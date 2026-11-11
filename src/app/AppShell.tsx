@@ -41,7 +41,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     return () => window.removeEventListener('keydown', close)
   }, [])
   const employee = role === 'EMPLOYEE'
-  const home = employee && ['/employee', '/my-schedule', '/registrations'].includes(path)
+  const home = employee && ['/employee', '/my-schedule', '/registrations', '/my-diligence'].includes(path)
   const links: NavigationItem[] = [{ path: homePaths[role], label: 'Tổng quan', icon: 'dashboard' }]
   if (role === 'ADMIN') links.push({ path: '/management', label: 'Không gian quản lý', icon: 'team' })
   links.push(...(employee ? [
@@ -49,6 +49,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     { path: '/my-schedule', label: 'Lịch của tôi', icon: 'calendar' as const },
     { path: '/employee', label: 'Chấm công', icon: 'clock' as const },
     { path: '/my-explanations', label: 'Giải trình', icon: 'check' as const },
+    { path: '/my-diligence', label: 'Chuyên cần', icon: 'clock' as const },
   ] : [
     { path: '/employees', label: 'Nhân viên', icon: 'team' as const },
     { path: '/positions', label: 'Vị trí', icon: 'briefcase' as const },

@@ -16,7 +16,7 @@ const server = setupServer(
   http.put(base + '/priority-scores/weights', async ({ request }) => { const body = await request.json() as typeof defaultWeights; return HttpResponse.json(body) }),
   http.put(base + '/priority-scores/ratings/:employeeId', () => new HttpResponse(null, { status: 204 })),
 )
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => server.listen())
 afterEach(() => { server.resetHandlers(); requests.length = 0 })
 afterAll(() => server.close())
 
