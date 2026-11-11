@@ -56,6 +56,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     { path: '/workplace', label: 'Điểm làm việc', icon: 'pin' as const },
     { path: '/schedules', label: 'Lịch làm việc', icon: 'calendar' as const },
     { path: '/attendance', label: 'Bảng công', icon: 'clock' as const },
+    { path: '/priority-scores', label: 'Điểm ưu tiên', icon: 'check' as const },
     { path: '/diligence', label: 'Chuyên cần', icon: 'check' as const },
     { path: '/attendance-results', label: 'Phân loại ca làm', icon: 'check' as const },
     { path: '/explanations-management', label: 'Duyệt giải trình', icon: 'check' as const },
