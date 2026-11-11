@@ -13,12 +13,13 @@ import { AttendancePage, AttendanceResultsPage, EmployeeHome } from '../features
 import { WorkplacePage } from '../features/workplace'
 import { RegistrationPage, RegistrationManagementPage } from '../features/registration'
 import { PushBridge } from '../features/notification'
-import { DiligencePage } from '../features/diligence'
+import { DiligencePage, EmployeeDiligencePage } from '../features/diligence'
 import { ExplanationPage, ManagementExplanationsPage } from '../features/explanations'
 import { PositionsPage } from '../features/positions'
 
 const routes: Record<string, { roles: Role[]; endpoint: string }> = {
   '/diligence': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
+  '/my-diligence': { roles: ['EMPLOYEE'], endpoint: '' },
   '/my-explanations': { roles: ['EMPLOYEE'], endpoint: '' },
   '/explanations-management': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
   '/workplace': { roles: ['MANAGER', 'ADMIN'], endpoint: '' },
@@ -68,7 +69,7 @@ export function App() {
       <PushBridge employeeId={user.role === 'EMPLOYEE' ? user.id : ''} />
       {passwordNotice && <p className="notice workspace-notice" role="status">{passwordNotice}</p>}
       {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} onSaved={() => { setChangingPassword(false); setPasswordNotice('Đổi mật khẩu thành công.') }} />}
-      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome employeeId={user.id} name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/registrations-management' ? <RegistrationManagementPage /> : path === '/registrations' ? <RegistrationPage /> : path === '/diligence' ? <DiligencePage /> : path === '/my-explanations' ? <ExplanationPage /> : path === '/explanations-management' ? <ManagementExplanationsPage /> : path === '/workplace' ? <WorkplacePage /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/my-schedule' ? <EmployeeSchedulePage name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/schedules' ? <SchedulePage /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/attendance' ? <AttendancePage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><div className="page-heading"><div><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1></div></div><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
+      {route?.roles.includes(user.role) ? (path === '/employee' ? <EmployeeHome employeeId={user.id} name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/registrations-management' ? <RegistrationManagementPage /> : path === '/registrations' ? <RegistrationPage /> : path === '/diligence' ? <DiligencePage /> : path === '/my-diligence' ? <EmployeeDiligencePage /> : path === '/my-explanations' ? <ExplanationPage /> : path === '/explanations-management' ? <ManagementExplanationsPage /> : path === '/workplace' ? <WorkplacePage /> : path === '/positions' ? <PositionsPage canManage={user.role === 'MANAGER'} /> : path === '/my-schedule' ? <EmployeeSchedulePage name={user.displayName} email={user.email} onChangePassword={() => { setPasswordNotice(''); setChangingPassword(true) }} onLogout={() => { void signOut() }} loggingOut={loggingOut} /> : path === '/schedules' ? <SchedulePage /> : path === '/attendance-results' ? <AttendanceResultsPage /> : path === '/attendance' ? <AttendancePage /> : path === '/accounts' || path === '/employees' ? <AccountsPage key={path} actor={user} /> : <Workspace key={path} endpoint={route.endpoint} name={user.displayName} />) : <main className="workspace"><div className="page-heading"><div><p className="eyebrow">{route ? '403 · KHÔNG ĐỦ QUYỀN' : '404 · KHÔNG TÌM THẤY'}</p><h1>{route ? 'Bạn không có quyền truy cập' : 'Trang không tồn tại'}</h1></div></div><a className="primary link-button" href={'#' + homePaths[user.role]}>Về trang của tôi</a></main>}
   </AppShell>
 }
 

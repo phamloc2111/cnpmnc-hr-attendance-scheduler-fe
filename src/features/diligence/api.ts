@@ -18,3 +18,8 @@ export function loadDiligence(month:string,q:string,page:number,signal:AbortSign
 export function loadEmployeeDiligence(id:string,month:string,page:number,signal:AbortSignal){return request<EmployeeMonth>(employeePath(id)+'?'+new URLSearchParams({month,page:String(page),size:'20'}),{signal})}
 export function loadReview(id:string,date:string,signal:AbortSignal){return request<ReviewHistory>(employeePath(id)+'/days/'+encodeURIComponent(date)+'/review',{signal})}
 export function saveReview(id:string,date:string,body:ReviewRequest){return request<Review>(employeePath(id)+'/days/'+encodeURIComponent(date)+'/review',{method:'PUT',body:JSON.stringify(body)})}
+
+export interface OwnDay { workDate:string; workedMinutes:number; deductedPoints:number; rawPoints:number; capped:boolean; pendingExplanation:boolean; disciplinaryReferral:boolean; components:Component[] }
+export interface OwnPeriod { periodType:'MONTH'|'WEEK'; from:string; to:string; timezone:string; asOf:string; finalized:boolean; score:number; deductedPoints:number; workedMinutes:number; days:OwnDay[] }
+export function loadOwnMonth(month:string,signal?:AbortSignal){return request<OwnPeriod>('/diligence/me?'+new URLSearchParams({month}),{signal})}
+export function loadOwnWeek(date:string,signal?:AbortSignal){return request<OwnPeriod>('/diligence/me/week?'+new URLSearchParams({date}),{signal})}

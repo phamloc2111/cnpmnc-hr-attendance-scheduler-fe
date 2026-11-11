@@ -11,6 +11,7 @@ import { instantLabel } from '../../shared/utils/dates'
 import { HomeIcon } from './HomeIcon'
 import { PushSettings } from '../notification'
 import { MonthSchedule } from './MonthSchedule'
+import { EmployeeDiligenceSummary } from '../diligence'
 import './manrope.css'
 import './home.css'
 
@@ -85,6 +86,7 @@ export function EmployeeHome({ name, email, employeeId, onChangePassword, onLogo
     <div className="home-content">
     <section className="home-clock-card" aria-label="Giờ hiện tại"><div><time>{localClock}</time><p>{date.charAt(0).toUpperCase() + date.slice(1)}</p><small>Giờ Việt Nam (UTC+7)</small></div>
       <span className="home-attendance-status"><i />{eventsError ? 'Chưa tải được điểm danh' : !events ? 'Đang tải điểm danh…' : selected && checkedIn(selected.id) ? 'Đã vào ca · Chờ ra ca' : events.length ? 'Đã có lượt điểm danh' : 'Chưa điểm danh'}</span></section>
+    <EmployeeDiligenceSummary month={today.slice(0,7)} revision={revision} />
     {notice && <p className="notice" role="status">{notice}</p>}
     {eventsError && <div className="home-state"><p role="alert">{eventsError}</p><button onClick={() => refresh(value => value + 1)}>Tải lại điểm danh</button></div>}
     <section className="home-shifts-section" aria-label="Ca làm hôm nay">
@@ -122,6 +124,6 @@ export function EmployeeHome({ name, email, employeeId, onChangePassword, onLogo
         {onLogout && <button disabled={loggingOut} onClick={onLogout}>Đăng xuất</button>}</div>
     </Modal>}
     {attendance && <CaptureAttendanceModal shift={attendance} type={checkedIn(attendance.id) ? 'CHECK_OUT' : 'CHECK_IN'} onClose={() => setAttendance(null)}
-      onSaved={event => { setEvents(previous => [...(previous ?? []).filter(item => item.id !== event.id), event]); setAttendance(null); setNotice((event.type === 'CHECK_IN' ? 'Đã ghi nhận vào ca lúc ' : 'Đã ghi nhận ra ca lúc ') + instantLabel(event.receivedAt)) }} />}
+      onSaved={event => { setEvents(previous => [...(previous ?? []).filter(item => item.id !== event.id), event]); setAttendance(null); refresh(value => value + 1); setNotice((event.type === 'CHECK_IN' ? 'Đã ghi nhận vào ca lúc ' : 'Đã ghi nhận ra ca lúc ') + instantLabel(event.receivedAt)) }} />}
   </main>
 }
