@@ -94,3 +94,16 @@ it('shows authenticated explanation images to the reviewer', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Duyệt' }))
   await waitFor(()=>expect(within(screen.getByRole('dialog')).getByAltText('Ảnh minh chứng giải trình')).toBeInTheDocument())
 })
+
+it('keeps the explanation dialog and entered reason when the file picker is canceled', async () => {
+  render(<ExplanationPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Gửi giải trình' }))
+  const dialog = screen.getByRole('dialog')
+  const reason = within(dialog).getByLabelText('Lý do giải trình')
+  fireEvent.change(reason, { target: { value: 'Road closure caused my delay' } })
+  fireEvent(within(dialog).getByLabelText('Ảnh minh chứng (tối đa 3 ảnh)'), new Event('cancel', { bubbles: true, cancelable: true }))
+  expect(dialog).toHaveAttribute('open')
+  expect(reason).toHaveValue('Road closure caused my delay')
+  fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
