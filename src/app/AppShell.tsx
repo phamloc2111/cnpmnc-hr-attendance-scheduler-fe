@@ -41,12 +41,13 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     return () => window.removeEventListener('keydown', close)
   }, [])
   const employee = role === 'EMPLOYEE'
-  const home = employee && ['/employee', '/my-schedule', '/registrations', '/my-diligence'].includes(path)
+  const home = employee && ['/employee', '/my-schedule', '/registrations', '/my-diligence', '/leave'].includes(path)
   const links: NavigationItem[] = [{ path: homePaths[role], label: 'Tổng quan', icon: 'dashboard' }]
   if (role === 'ADMIN') links.push({ path: '/management', label: 'Không gian quản lý', icon: 'team' })
   links.push(...(employee ? [
     { path: '/registrations', label: 'Đăng ký ca', icon: 'check' as const },
     { path: '/my-schedule', label: 'Lịch của tôi', icon: 'calendar' as const },
+    { path: '/leave', label: 'Xin nghỉ phép', icon: 'calendar' as const },
     { path: '/employee', label: 'Chấm công', icon: 'clock' as const },
     { path: '/my-explanations', label: 'Giải trình', icon: 'check' as const },
     { path: '/my-diligence', label: 'Chuyên cần', icon: 'clock' as const },
@@ -55,6 +56,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     { path: '/positions', label: 'Vị trí', icon: 'briefcase' as const },
     { path: '/workplace', label: 'Điểm làm việc', icon: 'pin' as const },
     { path: '/schedules', label: 'Lịch làm việc', icon: 'calendar' as const },
+    { path: '/leave-management', label: 'Duyệt đơn nghỉ', icon: 'calendar' as const },
     { path: '/attendance', label: 'Bảng công', icon: 'clock' as const },
     { path: '/priority-scores', label: 'Điểm ưu tiên', icon: 'check' as const },
     { path: '/diligence', label: 'Chuyên cần', icon: 'check' as const },
