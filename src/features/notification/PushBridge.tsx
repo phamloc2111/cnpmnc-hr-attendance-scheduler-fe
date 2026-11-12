@@ -26,5 +26,18 @@ export function PushBridge({ employeeId }: { employeeId: string }) {
     }).catch(() => { /* Settings panel provides an explicit retry; do not interrupt attendance. */ })
     return () => { active = false; dispose?.() }
   }, [employeeId, revision])
-  return message && <aside className="push-toast" role="status"><div><strong>{message.title}</strong><p>{message.body}</p><a href={notificationUrl(message.weekStart)}>Đăng ký ca ngay →</a></div><button aria-label="Đóng thông báo" onClick={() => setMessage(null)}>×</button></aside>
+  return message && (
+    <aside className="push-toast" role="status">
+      <div>
+        <strong>{message.title}</strong>
+        <p>{message.body}</p>
+        <a href={notificationUrl(message)}>
+          {message.type === 'SCHEDULE_PUBLISHED' || message.type === 'SHIFT_REMINDER'
+            ? 'Xem thời khóa biểu →'
+            : 'Đăng ký ca ngay →'}
+        </a>
+      </div>
+      <button aria-label="Đóng thông báo" onClick={() => setMessage(null)}>×</button>
+    </aside>
+  )
 }
