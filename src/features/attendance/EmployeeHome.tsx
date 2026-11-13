@@ -107,6 +107,7 @@ export function EmployeeHome({ name, email, employeeId, onChangePassword, onLogo
       })}</ul>}
     </section>
     <p className="home-explanation-link"><a href="#/my-explanations">Giải trình chấm công và xem kết quả duyệt →</a></p>
+    <p className="home-explanation-link"><a href="#/shift-pass">Đăng pass ca và nhận ca từ đồng nghiệp →</a></p>
     <OwnPriorityCard />
     <MonthSchedule today={today} clock={clock} revision={revision} />
     <div className="home-install-region"><InstallApp /></div>

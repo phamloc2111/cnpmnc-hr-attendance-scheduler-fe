@@ -1,0 +1,141 @@
+.shiftpass-page {
+  padding: 1.5rem;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.shiftpass-header h1 {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 1.5rem;
+}
+
+.shiftpass-header p {
+  margin: 0;
+  color: #475569;
+}
+
+.shiftpass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.shiftpass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.15rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.shiftpass-card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.shiftpass-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.shiftpass-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.shiftpass-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.shiftpass-field select,
+.shiftpass-field textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  background: #ffffff;
+}
+
+.shiftpass-note {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+.shiftpass-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.shiftpass-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.45rem;
+  background: #f8fafc;
+}
+
+.shiftpass-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.shiftpass-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.shiftpass-badge-OPEN {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.shiftpass-badge-CLAIMED {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.shiftpass-badge-CANCELLED {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.shiftpass-badge-EXPIRED {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.shiftpass-meta {
+  font-size: 0.85rem;
+  color: #475569;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.shiftpass-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
