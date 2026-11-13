@@ -54,13 +54,23 @@ export function ShiftPassPage({ managerOnly = false }: { managerOnly?: boolean }
           return
         }
         const today = vietnamToday()
-        const [schedulePage, passes, available, notifs] = await Promise.all([
-          listSchedules(today, addDays(today, 14), 0),
+        const toDate = addDays(today, 14)
+        async function fetchAllUpcomingSchedules() {
+          const first = await listSchedules(today, toDate, 0)
+          const items = [...first.items]
+          for (let page = 1; page < first.totalPages; page += 1) {
+            const next = await listSchedules(today, toDate, page)
+            items.push(...next.items)
+          }
+          return items
+        }
+        const [scheduleItems, passes, available, notifs] = await Promise.all([
+          fetchAllUpcomingSchedules(),
           listMyShiftPasses(),
           listAvailableShiftPasses(),
           listShiftPassNotifications(),
         ])
-        setSchedules(schedulePage.items)
+        setSchedules(scheduleItems)
         setMyPasses(passes)
         setAvailablePasses(available)
         setNotifications(notifs)
@@ -287,7 +297,10 @@ export function ShiftPassPage({ managerOnly = false }: { managerOnly?: boolean }
           </section>
         )}
 
-        <section className="shiftpass-card" aria-label="Thông báo pass ca cùng vị trí">
+        <section
+          className="shiftpass-card"
+          aria-label={managerOnly ? 'Thông báo biến động pass ca' : 'Thông báo pass ca cùng vị trí'}
+        >
           <h2>Thông báo pass ca ({activeNotifications.length})</h2>
           {activeNotifications.length === 0 ? (
             <p className="muted">Không còn thông báo pass ca nào đang mở.</p>
