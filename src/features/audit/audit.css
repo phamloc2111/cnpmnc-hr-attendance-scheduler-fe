@@ -1,0 +1,115 @@
+.audit-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.audit-readonly-banner {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.audit-filters {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.audit-filter-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.4rem;
+}
+
+.audit-filter-field input,
+.audit-filter-field select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.audit-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.audit-table th,
+.audit-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+  font-size: 0.9rem;
+}
+
+.audit-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.audit-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.audit-badge.schedule {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.audit-badge.attendance {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.audit-diff-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.82rem;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.audit-diff-box.old {
+  border-left: 3px solid #ef4444;
+}
+
+.audit-diff-box.new {
+  border-left: 3px solid #10b981;
+}
