@@ -21,7 +21,17 @@ export function EmployeeSchedulePage({ name, email, onChangePassword, onLogout, 
     setData(null); setError(''); setDetail(null)
     loadEmployeeWeek(week).then(result => { if (active) setData(result) })
       .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Không thể tải lịch làm việc.') })
-    return () => { active = false }
+    const syncSilently = () => {
+      if (document.visibilityState === 'hidden') return
+      loadEmployeeWeek(week).then(result => { if (active) setData(result) }).catch(() => {})
+    }
+    const timer = window.setInterval(syncSilently, 3500)
+    window.addEventListener('shiftsync:schedule-updated', syncSilently)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+      window.removeEventListener('shiftsync:schedule-updated', syncSilently)
+    }
   }, [week, revision])
   function changeWeek(value: string) { if (value) { setWeek(monday(value)) } }
   const range = dateLabel(week) + ' – ' + dateLabel(addDays(week, 6))

@@ -1,5 +1,5 @@
 import { request } from '../../shared/api/client'
-import type { ShiftPassItem, ShiftPassNotificationItem } from './types'
+import type { AvailableShiftPassItem, ShiftPassItem, ShiftPassNotificationItem } from './types'
 
 export const createShiftPass = (scheduleId: string, reason?: string) =>
   request<ShiftPassItem>('/shift-passes', {
@@ -9,6 +9,12 @@ export const createShiftPass = (scheduleId: string, reason?: string) =>
 
 export const listMyShiftPasses = () =>
   request<ShiftPassItem[]>('/shift-passes/mine')
+
+export const listAvailableShiftPasses = () =>
+  request<AvailableShiftPassItem[]>('/shift-passes/available')
+
+export const claimShiftPass = (id: string) =>
+  request<ShiftPassItem>('/shift-passes/' + id + '/claim', { method: 'POST' })
 
 export const cancelShiftPass = (id: string) =>
   request<void>('/shift-passes/' + id, { method: 'DELETE' })
