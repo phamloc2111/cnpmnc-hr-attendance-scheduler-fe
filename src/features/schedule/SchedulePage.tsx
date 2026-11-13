@@ -20,7 +20,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
   const [cancel, setCancel] = useState<WorkSchedule | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
   const [draggedShift, setDraggedShift] = useState<WorkSchedule | null>(null)
   const [dropTargetDate, setDropTargetDate] = useState<string | null>(null)
   const [overtimeWarning, setOvertimeWarning] = useState<string | null>(null)
@@ -125,7 +125,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     </div>
 
     {notice && <p role="status" className="success">{notice}</p>}
-    {error && !cancel && <p role="alert" className="error">{error}</p>}
+    {error && !cancel && data && <p role="alert" className="error">{error}</p>}
 
     <section className="account-card">
       <div className="schedule-toolbar">
@@ -140,7 +140,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
         <button onClick={() => refresh(value => value + 1)}>Tải lại</button>
       </div>
 
-      {!data ? <p className="table-state" role="status">Đang tải lịch làm việc…</p>
+      {error && !cancel && !data ? <div className="table-state"><p role="alert">{error}</p><button onClick={() => refresh(value => value + 1)}>Thử lại</button></div> : !data ? <p className="table-state" role="status">Đang tải lịch làm việc…</p>
         : data.items.length === 0 ? <div className="table-state">
             <h2>Chưa có lịch trong tuần này</h2>
             <p>{employee ? 'Lịch sẽ xuất hiện khi quản lý công bố phân ca cho bạn.' : 'Chọn Phân ca để thêm lịch làm cho nhân viên, sau đó bấm Công bố.'}</p>
@@ -181,7 +181,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
                             <button
                               type="button"
                               onClick={() => { setCancel(item); setError('') }}
-                              aria-label={`Hủy ca ${item.employeeName}`}
+                              aria-label={`Hủy ca ${item.employeeName} ${item.shiftName}`}
                             >
                               Hủy
                             </button>
