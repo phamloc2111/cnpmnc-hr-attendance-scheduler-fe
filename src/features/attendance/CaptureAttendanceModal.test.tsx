@@ -73,7 +73,7 @@ it.each(['CHECK_IN', 'CHECK_OUT'] as const)(
     const actionButton = screen.getByRole('button', { name: type === 'CHECK_IN' ? 'Điểm danh vào' : 'Điểm danh ra' })
     expect(actionButton).toBeDisabled()
 
-    const file = new File(['timemark-photo-bytes'], 'timemark_20261107.jpg', { type: 'image/jpeg' })
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2])], 'timemark_20261107.jpg', { type: 'image/jpeg' })
     const input = screen.getByLabelText('Chọn ảnh Timemark')
     fireEvent.change(input, { target: { files: [file] } })
 
@@ -116,6 +116,28 @@ it('rejects unsupported file type on client side and prevents submission', async
   expect(saved).not.toHaveBeenCalled()
 })
 
+it('rejects a file labeled JPEG whose bytes are not an image before uploading', async () => {
+  render(<CaptureAttendanceModal shift={shift} type="CHECK_IN" onClose={() => {}} onSaved={saved} />)
+  const input = screen.getByLabelText('Chọn ảnh Timemark')
+  fireEvent.change(input, { target: { files: [new File(['not a JPEG'], 'photo.jpg', { type: 'image/jpeg' })] } })
+  fireEvent.click(screen.getByRole('button', { name: 'Điểm danh vào' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('không khớp định dạng')
+  expect(capturedBodies).toHaveLength(0)
+  expect(saved).not.toHaveBeenCalled()
+})
+
+it('shows the backend reason when a multipart upload is rejected with 400', async () => {
+  server.use(http.post('http://localhost:8080/api/v1/attendance/events', () =>
+    HttpResponse.json({ code: 'INVALID_ATTENDANCE', message: 'Ảnh Timemark không hợp lệ.' }, { status: 400 })))
+  render(<CaptureAttendanceModal shift={shift} type="CHECK_IN" onClose={() => {}} onSaved={saved} />)
+  fireEvent.change(screen.getByLabelText('Chọn ảnh Timemark'), { target: {
+    files: [new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1])], 'timemark.jpg', { type: 'image/jpeg' })],
+  } })
+  fireEvent.click(screen.getByRole('button', { name: 'Điểm danh vào' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Ảnh Timemark không hợp lệ.')
+  expect(saved).not.toHaveBeenCalled()
+})
+
 it('rejects file larger than 5 MB on client side', async () => {
   render(<CaptureAttendanceModal shift={shift} type="CHECK_IN" onClose={() => {}} onSaved={saved} />)
 
@@ -137,7 +159,7 @@ it('keeps modal open after backend rejection and allows retry with new photo', a
 
   render(<CaptureAttendanceModal shift={shift} type="CHECK_IN" onClose={() => {}} onSaved={saved} />)
 
-  const file1 = new File(['photo-outside'], 'outside.jpg', { type: 'image/jpeg' })
+  const file1 = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1])], 'outside.jpg', { type: 'image/jpeg' })
   const input = screen.getByLabelText('Chọn ảnh Timemark')
   fireEvent.change(input, { target: { files: [file1] } })
 
@@ -148,7 +170,7 @@ it('keeps modal open after backend rejection and allows retry with new photo', a
   // Reset handler to succeed on retry
   server.resetHandlers()
 
-  const file2 = new File(['photo-valid'], 'valid.jpg', { type: 'image/jpeg' })
+  const file2 = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 2])], 'valid.jpg', { type: 'image/jpeg' })
   fireEvent.change(input, { target: { files: [file2] } })
   fireEvent.click(screen.getByRole('button', { name: 'Điểm danh vào' }))
 

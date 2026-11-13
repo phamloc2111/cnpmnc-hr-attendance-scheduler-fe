@@ -4,7 +4,7 @@ import { instantLabel } from '../../shared/utils/dates'
 import type { WorkSchedule } from '../schedule'
 import { sendAttendance } from './api'
 import type { AttendanceEvent, AttendanceType } from './types'
-import { validateSelectedPhoto } from './capture'
+import { validatePhotoSignature, validateSelectedPhoto } from './capture'
 import './capture.css'
 
 export function CaptureAttendanceModal({ shift, type, onClose, onSaved }: {
@@ -54,6 +54,8 @@ export function CaptureAttendanceModal({ shift, type, onClose, onSaved }: {
     setBusy(true)
     setError('')
     try {
+      const signatureError = await validatePhotoSignature(file)
+      if (signatureError) { if (mounted.current) setError(signatureError); return }
       const event = await sendAttendance(shift.id, type, file)
       if (mounted.current) onSaved(event)
     } catch (failure: unknown) {
