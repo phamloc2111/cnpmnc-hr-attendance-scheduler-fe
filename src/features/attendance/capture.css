@@ -1,6 +1,11 @@
 .capture-attendance h3 { margin:0 0 8px; color:#10213f; }
 .capture-attendance > p { font-size:13px; color:#60708b; line-height:1.6; }
 .capture-attendance video { display:block; width:100%; aspect-ratio:4/3; max-height:45vh; object-fit:cover; background:#10213f; border-radius:16px; }
+.capture-attendance .timemark-file-picker { margin:14px 0; padding:12px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; text-align:center; }
+.capture-attendance .timemark-file-picker input[type=file] { width:100%; font-size:14px; color:#475569; }
+.capture-attendance .selected-file-name { margin:8px 0 0; font-size:13px; color:#0f766e; }
+.capture-attendance .preview-container { margin:12px 0; max-height:220px; overflow:hidden; border-radius:12px; background:#0f172a; display:flex; align-items:center; justify-content:center; }
+.capture-attendance .photo-preview { max-width:100%; max-height:220px; object-fit:contain; border-radius:8px; }
 .capture-attendance p[role=alert] { color:#b42318; padding:12px; background:#fff1ef; border-radius:10px; }
 .capture-attendance .modal-actions { flex-wrap:wrap; }
 .attendance-results-page .attendance-result-list { display:grid; gap:14px; }
