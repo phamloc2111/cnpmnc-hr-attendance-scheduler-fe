@@ -3,19 +3,21 @@ import type { FormEvent } from 'react'
 import { Modal } from '../../shared/components/Modal'
 import { addDays, dateLabel, instantLabel, monday, timeLabel, vietnamToday } from '../../shared/utils/dates'
 import { listAccounts } from '../accounts'
+import { useAuth } from '../auth/AuthProvider'
 import { PositionSelect } from '../positions'
-import { assignShift, cancelSchedule, createShift, listSchedules, listShifts } from './api'
-import type { Page, Shift, WorkSchedule } from './types'
+import { assignShift, cancelSchedule, createShift, generateSchedule, listSchedules, listShifts } from './api'
+import type { GenerationResult, Page, Shift, WorkSchedule } from './types'
 import './schedule.css'
 
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'Không thể tải dữ liệu.' }
 export function SchedulePage({ employee = false }: { employee?: boolean }) {
+  const { user } = useAuth()
   const [week, setWeek] = useState(() => monday(vietnamToday()))
   const [page, setPage] = useState(0)
   const [data, setData] = useState<Page<WorkSchedule> | null>(null)
   const [error, setError] = useState('')
   const [revision, refresh] = useState(0)
-  const [modal, setModal] = useState<'assign' | 'shifts' | null>(null)
+  const [modal, setModal] = useState<'assign' | 'shifts' | 'generate' | null>(null)
   const [cancel, setCancel] = useState<WorkSchedule | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -36,7 +38,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
   }
   return <main className="workspace accounts-page schedule-page">
     <div className="page-heading"><div><p className="eyebrow">XẾP LỊCH</p><h1>{employee ? 'Lịch của tôi' : 'Lịch làm việc'}</h1><p className="muted">Theo tuần · Giờ Việt Nam (UTC+7) · Ngày làm việc là ngày bắt đầu ca.</p></div>
-      {!employee && <div className="actions"><button onClick={() => setModal('shifts')}>Mẫu ca</button><button className="primary" onClick={() => setModal('assign')}>Phân ca</button></div>}</div>
+      {!employee && <div className="actions"><button onClick={() => setModal('shifts')}>Mẫu ca</button>{user?.role === 'MANAGER' && <button onClick={() => setModal('generate')}>Xếp lịch tự động</button>}<button className="primary" onClick={() => setModal('assign')}>Phân ca</button></div>}</div>
     {notice && <p role="status" className="success">{notice}</p>}
     <section className="account-card">
       <div className="schedule-toolbar"><button aria-label="Tuần trước" onClick={() => changeWeek(addDays(week, -7))}>←</button>
@@ -54,6 +56,11 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
         </tbody></table></div><Pager page={data.page} pages={data.totalPages} onChange={setPage} /></>}
     </section>
     {modal === 'shifts' && <ShiftLibrary onClose={() => setModal(null)} />}
+    {modal === 'generate' && <ScheduleGeneration week={week} onClose={() => setModal(null)} onSaved={result => {
+      setModal(null)
+      setNotice(`Đã xếp ${result.createdCount} lượt ca.${result.belowMinimumEmployeeCount ? ` ${result.belowMinimumEmployeeCount} nhân viên chưa đạt giờ tối thiểu mục tiêu.` : ''}`)
+      refresh(value => value + 1)
+    }} />}
     {modal === 'assign' && <Assignment initialDate={week} onClose={() => setModal(null)} onSaved={date => { setModal(null); changeWeek(date); setNotice('Đã phân ca cho nhân viên.'); refresh(value => value + 1) }} />}
     {cancel && <Modal title="Hủy ca làm" busy={busy} onClose={() => { setCancel(null); setError('') }}>
       <p>Hủy ca {cancel.shiftName} của {cancel.employeeName} ngày {dateLabel(cancel.workDate)}?</p>
@@ -64,6 +71,60 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
 }
 function Pager({ page, pages, onChange }: { page: number; pages: number; onChange: (value: number) => void }) {
   return <div className="pagination"><button type="button" disabled={page === 0} onClick={() => onChange(page - 1)}>Trang trước</button><span>Trang {page + 1} / {Math.max(1, pages)}</span><button type="button" disabled={page + 1 >= pages} onClick={() => onChange(page + 1)}>Trang sau</button></div>
+}
+function ScheduleGeneration({ week, onClose, onSaved }: { week: string; onClose: () => void; onSaved: (result: GenerationResult) => void }) {
+  const [page, setPage] = useState(0)
+  const [shifts, setShifts] = useState<Page<Shift> | null>(null)
+  const [selectedShifts, setSelectedShifts] = useState<string[]>([])
+  const [selectedDates, setSelectedDates] = useState<string[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    let active = true
+    setShifts(null); setError('')
+    listShifts(page).then(value => { if (active) setShifts(value) })
+      .catch((failure: unknown) => { if (active) setError(errorMessage(failure)) })
+    return () => { active = false }
+  }, [page])
+  function toggle(value: string, current: string[], update: (value: string[]) => void) {
+    update(current.includes(value) ? current.filter(item => item !== value) : [...current, value])
+  }
+  async function generate(event: FormEvent) {
+    event.preventDefault()
+    if (busy || !selectedShifts.length || !selectedDates.length) {
+      setError('Hãy chọn ít nhất một mẫu ca và một ngày trong tuần.')
+      return
+    }
+    setBusy(true); setError('')
+    try { onSaved(await generateSchedule({ weekStart: week, shiftTemplateIds: selectedShifts, workDates: selectedDates })) }
+    catch (failure: unknown) { setError(errorMessage(failure)) }
+    finally { setBusy(false) }
+  }
+  return <Modal title="Xếp lịch tự động" busy={busy} onClose={onClose}>
+    <p className="muted">Chỉ nhân viên đã đăng ký mẫu ca cho tuần này và phù hợp vị trí mới được chọn. Hệ thống chỉ lưu khi đủ người cho tất cả ca đã chọn.</p>
+    <form onSubmit={event => { void generate(event) }}>
+      <fieldset disabled={busy} className="schedule-fields">
+        <h3>Ngày cần xếp</h3>
+        <div className="generation-options">{Array.from({ length: 7 }, (_, index) => addDays(week, index)).map(date =>
+          <label key={date}><input type="checkbox" checked={selectedDates.includes(date)}
+            onChange={() => toggle(date, selectedDates, setSelectedDates)} />{dateLabel(date)}</label>)}</div>
+        <h3>Mẫu ca cần xếp</h3>
+        {!shifts ? !error && <p role="status">Đang tải mẫu ca…</p> : <>
+          <div className="generation-options">{shifts.items.map(shift => <label key={shift.id}>
+            <input type="checkbox" checked={selectedShifts.includes(shift.id)} disabled={!shift.requiredPositionId}
+              onChange={() => toggle(shift.id, selectedShifts, setSelectedShifts)} />
+            {shift.name} · {shift.requiredHeadcount} người · {shift.requiredPosition ?? 'Thiếu vị trí'}
+          </label>)}</div>
+          {shifts.totalPages > 1 && <Pager page={page} pages={shifts.totalPages} onChange={setPage} />}
+        </>}
+        {error && <p role="alert" className="error">{error}</p>}
+        <div className="modal-actions"><button type="button" onClick={onClose}>Hủy</button>
+          <button className="primary" type="submit" disabled={busy || !selectedShifts.length || !selectedDates.length}>
+            {busy ? 'Đang xếp…' : 'Xác nhận xếp lịch'}
+          </button></div>
+      </fieldset>
+    </form>
+  </Modal>
 }
 function ShiftLibrary({ onClose }: { onClose: () => void }) {
   const [page, setPage] = useState(0)
