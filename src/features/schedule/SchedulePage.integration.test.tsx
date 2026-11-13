@@ -47,6 +47,15 @@ const server = setupServer(
     return HttpResponse.json({ weekStart: '2026-11-02', createdCount: 1, maxWeeklyMinutes: 480,
       minWeeklyMinutes: 0, belowMinimumEmployeeCount: 0, items: [row] })
   }),
+  http.post(base + '/work-schedules/drafts', async ({ request }) => {
+    bodies.push(await request.json() as Record<string, unknown>); rows = [{ ...row, draft: true }]
+    return HttpResponse.json({ weekStart: '2026-11-02', createdCount: 1, missingCount: 1,
+      shortages: [{ workDate: '2026-11-05', shiftTemplateId: shift.id, shiftName: shift.name, missingCount: 1 }], items: rows })
+  }),
+  http.post(base + '/work-schedules/draft-assignments', async ({ request }) => {
+    bodies.push(await request.json() as Record<string, unknown>)
+    return HttpResponse.json({ ...row, id: 'draft-manual', draft: true }, { status: 201 })
+  }),
   http.delete(base + '/work-schedules/:id', () => { rows = []; return new HttpResponse(null, { status: 204 }) }),
 )
 beforeAll(() => {
@@ -161,7 +170,7 @@ it('assigns a selected employee and shift then reloads the week', async () => {
 })
 it('generates selected dates and templates and reloads the week', async () => {
   mount(); const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tự động' }))
+  await user.click(await screen.findByRole('button', { name: 'Xếp lịch đầy đủ (công bố ngay)' }))
   const dialog = within(screen.getByRole('dialog', { name: 'Xếp lịch tự động' }))
   await user.click(dialog.getByRole('checkbox', { name: '02/11/2026' }))
   await user.click(dialog.getByRole('checkbox', { name: /Ca đêm/ }))
@@ -172,7 +181,7 @@ it('generates selected dates and templates and reloads the week', async () => {
 it('keeps generation open if the schedule is unfillable', async () => {
   server.use(http.post(base + '/work-schedules/generate', () => HttpResponse.json({ message: 'Không đủ nhân viên đã đăng ký' }, { status: 409 })))
   mount(); const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tự động' }))
+  await user.click(await screen.findByRole('button', { name: 'Xếp lịch đầy đủ (công bố ngay)' }))
   const dialog = within(screen.getByRole('dialog', { name: 'Xếp lịch tự động' }))
   await user.click(dialog.getByRole('checkbox', { name: '02/11/2026' }))
   await user.click(dialog.getByRole('checkbox', { name: /Ca đêm/ }))
@@ -183,7 +192,33 @@ it('keeps generation open if the schedule is unfillable', async () => {
 it('does not offer automatic team scheduling to admins without a selected manager', async () => {
   role = 'ADMIN'; mount()
   expect(await screen.findByRole('heading', { name: 'Lịch làm việc' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Xếp lịch tự động' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Xếp lịch tuần (tạo nháp)' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Xếp lịch đầy đủ (công bố ngay)' })).not.toBeInTheDocument()
+})
+it('creates a private partial week draft with one click and offers manual assignment', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tuần (tạo nháp)' }))
+  expect(await screen.findByText(/Đã tạo bản nháp tuần: xếp thêm 1 lượt ca/)).toBeInTheDocument()
+  expect(bodies).toEqual([{ weekStart: '2026-11-02' }])
+  expect(await screen.findByText('Bản nháp')).toBeInTheDocument()
+  expect(screen.getByText(/Ca đêm · thiếu 1 người/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Gán tay' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Gán tay vào bản nháp' }))
+  await user.click(await dialog.findByRole('button', { name: /Nguyễn An/ }))
+  await user.click(dialog.getByRole('button', { name: 'Lưu phân ca' }))
+  expect(await screen.findByText('Đã gán tay vào bản nháp.')).toBeInTheDocument()
+  expect(bodies[1]).toEqual({ employeeId: 'employee-1', shiftTemplateId: 'shift-1', workDate: '2026-11-05' })
+  expect(screen.queryByRole('region', { name: 'Ca còn thiếu người' })).not.toBeInTheDocument()
+})
+it('lets a manager add to a draft after reopening the schedule page', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Gán vào nháp' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Gán tay vào bản nháp' }))
+  await user.click(await dialog.findByRole('button', { name: /Nguyễn An/ }))
+  await user.selectOptions(await dialog.findByLabelText('Mẫu ca'), shift.id)
+  await user.click(dialog.getByRole('button', { name: 'Lưu phân ca' }))
+  expect(await screen.findByText('Đã gán tay vào bản nháp.')).toBeInTheDocument()
+  expect(bodies).toEqual([{ employeeId: 'employee-1', shiftTemplateId: shift.id, workDate: '2026-11-02' }])
 })
 it('keeps assignment open and displays overlap errors', async () => {
   server.use(http.post(base + '/work-schedules', () => HttpResponse.json({ message: 'Nhân viên đã có ca trùng giờ' }, { status: 409 })))
