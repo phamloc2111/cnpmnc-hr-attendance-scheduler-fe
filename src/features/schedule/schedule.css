@@ -19,3 +19,8 @@
 .generation-options { display:grid; gap:10px; margin:12px 0 20px; }
 .generation-options label { display:flex; align-items:center; gap:10px; margin:0; }
 .generation-options input { width:18px; height:18px; flex:0 0 18px; accent-color:#245d49; }
+.draft-shortages { margin:16px 0; padding:18px 20px; border:1px solid #e5d4a5; border-radius:12px; background:#fffaf0; }
+.draft-shortages h2 { margin:0 0 10px; font-size:17px; }
+.draft-shortages ul { list-style:none; padding:0; margin:0; }
+.draft-shortages li { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid #eee3c8; }
+.draft-badge { display:inline-block; margin-left:8px; padding:2px 7px; border-radius:6px; background:#fff3cf; color:#705000; font-size:11px; }
