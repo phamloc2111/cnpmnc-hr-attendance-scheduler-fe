@@ -5,8 +5,8 @@ import { addDays, dateLabel, instantLabel, monday, timeLabel, vietnamToday } fro
 import { listAccounts } from '../accounts'
 import { useAuth } from '../auth/AuthProvider'
 import { PositionSelect } from '../positions'
-import { assignDraftShift, assignShift, cancelSchedule, createShift, generateSchedule, generateWeeklyDraft, listSchedules, listShifts } from './api'
-import type { DraftGenerationResult, DraftShortage, GenerationResult, Page, Shift, WorkSchedule } from './types'
+import { assignDraftShift, assignShift, cancelSchedule, createShift, generateWeeklyDraft, getDraftWarnings, listSchedules, listShifts } from './api'
+import type { DraftShortage, DraftWarnings, Page, Shift, WorkSchedule } from './types'
 import './schedule.css'
 
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'Không thể tải dữ liệu.' }
@@ -17,9 +17,10 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
   const [data, setData] = useState<Page<WorkSchedule> | null>(null)
   const [error, setError] = useState('')
   const [revision, refresh] = useState(0)
-  const [modal, setModal] = useState<'assign' | 'draftAssign' | 'shifts' | 'generate' | null>(null)
+  const [modal, setModal] = useState<'assign' | 'draftAssign' | 'shifts' | null>(null)
   const [draftTarget, setDraftTarget] = useState<DraftShortage | null>(null)
-  const [draftResult, setDraftResult] = useState<DraftGenerationResult | null>(null)
+  const [warnings, setWarnings] = useState<DraftWarnings | null>(null)
+  const [warningsError, setWarningsError] = useState('')
   const [draftBusy, setDraftBusy] = useState(false)
   const [draftError, setDraftError] = useState('')
   const [cancel, setCancel] = useState<WorkSchedule | null>(null)
@@ -32,13 +33,20 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
       .catch((failure: unknown) => { if (active) setError(errorMessage(failure)) })
     return () => { active = false }
   }, [week, page, revision])
-  function changeWeek(value: string) { if (value) { setWeek(monday(value)); setPage(0); setDraftResult(null); setDraftError('') } }
+  useEffect(() => {
+    if (employee || user?.role !== 'MANAGER') return
+    let active = true
+    setWarnings(null); setWarningsError('')
+    getDraftWarnings(week).then(value => { if (active) setWarnings(value) })
+      .catch((failure: unknown) => { if (active) setWarningsError(errorMessage(failure)) })
+    return () => { active = false }
+  }, [employee, user?.role, week, revision])
+  function changeWeek(value: string) { if (value) { setWeek(monday(value)); setPage(0); setDraftError('') } }
   async function createDraft() {
     if (draftBusy) return
     setDraftBusy(true); setDraftError(''); setNotice('')
     try {
       const result = await generateWeeklyDraft(week)
-      setDraftResult(result)
       setNotice(`Đã tạo bản nháp tuần: xếp thêm ${result.createdCount} lượt ca.${result.missingCount ? ` Còn thiếu ${result.missingCount} vị trí để quản lý gán tay.` : ''}`)
       refresh(value => value + 1)
     } catch (failure: unknown) { setDraftError(errorMessage(failure)) }
@@ -51,13 +59,21 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     catch (failure: unknown) { setError(errorMessage(failure)) }
     finally { setBusy(false) }
   }
+  const overtimeById = new Map(warnings?.overtime.map(item => [item.employeeId, item]) ?? [])
   return <main className="workspace accounts-page schedule-page">
     <div className="page-heading"><div><p className="eyebrow">XẾP LỊCH</p><h1>{employee ? 'Lịch của tôi' : 'Lịch làm việc'}</h1><p className="muted">Theo tuần · Giờ Việt Nam (UTC+7) · Ngày làm việc là ngày bắt đầu ca.</p></div>
-      {!employee && <div className="actions"><button onClick={() => setModal('shifts')}>Mẫu ca</button>{user?.role === 'MANAGER' && <><button className="primary" disabled={draftBusy} onClick={() => { void createDraft() }}>{draftBusy ? 'Đang tạo nháp…' : 'Xếp lịch tuần (tạo nháp)'}</button><button onClick={() => setModal('generate')}>Xếp lịch đầy đủ (công bố ngay)</button><button onClick={() => { setDraftTarget(null); setModal('draftAssign') }}>Gán vào nháp</button></>}<button onClick={() => setModal('assign')}>Phân ca</button></div>}</div>
+      {!employee && <div className="actions"><button onClick={() => setModal('shifts')}>Mẫu ca</button>{user?.role === 'MANAGER' && <><button className="primary" disabled={draftBusy} onClick={() => { void createDraft() }}>{draftBusy ? 'Đang tạo nháp…' : 'Xếp lịch tự động'}</button><button onClick={() => { setDraftTarget(null); setModal('draftAssign') }}>Gán vào nháp</button></>}<button onClick={() => setModal('assign')}>Phân ca</button></div>}</div>
     {notice && <p role="status" className="success">{notice}</p>}
     {draftError && <p role="alert" className="error">{draftError}</p>}
-    {draftResult && draftResult.shortages.length > 0 && <section className="draft-shortages" aria-label="Ca còn thiếu người"><h2>Ca cần quản lý gán tay</h2><ul>{draftResult.shortages.map(shortage =>
-      <li key={shortage.workDate + shortage.shiftTemplateId}><span>{dateLabel(shortage.workDate)} · {shortage.shiftName} · thiếu {shortage.missingCount} người</span><button onClick={() => { setDraftTarget(shortage); setModal('draftAssign') }}>Gán tay</button></li>)}</ul></section>}
+    {warningsError && <p role="alert" className="error">Không tải được cảnh báo bản nháp: {warningsError}</p>}
+    {warnings?.draftExists && <section className="draft-shortages" aria-label="Cảnh báo bản nháp lịch">
+      <h2>Cảnh báo bản nháp lịch</h2>
+      {warnings.shortages.length === 0 && warnings.overtime.length === 0 && <p>Không có ca thiếu người hoặc nhân viên vượt giờ.</p>}
+      {warnings.shortages.length > 0 && <><h3>Ca thiếu người ({warnings.missingCount} vị trí)</h3><ul>{warnings.shortages.map(shortage =>
+        <li key={shortage.workDate + shortage.shiftTemplateId}><span>{dateLabel(shortage.workDate)} · {shortage.shiftName} · thiếu {shortage.missingCount} người</span><button onClick={() => { setDraftTarget(shortage); setModal('draftAssign') }}>Gán tay</button></li>)}</ul></>}
+      {warnings.overtime.length > 0 && <><h3>Nhân viên vượt giờ</h3><ul>{warnings.overtime.map(item =>
+        <li key={item.employeeId}>{item.employeeName} · {item.weeklyMinutes} phút/tuần · vượt {item.exceededMinutes} phút (tối đa {warnings.maxWeeklyMinutes} phút)</li>)}</ul></>}
+    </section>}
     <section className="account-card">
       <div className="schedule-toolbar"><button aria-label="Tuần trước" onClick={() => changeWeek(addDays(week, -7))}>←</button>
         <div className="schedule-week-picker"><label htmlFor="schedule-week">Chọn tuần</label><input id="schedule-week" type="date" value={week} onChange={event => changeWeek(event.target.value)} /></div>
@@ -67,24 +83,17 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
         : !data ? <p className="table-state" role="status">Đang tải lịch làm việc…</p>
         : data.items.length === 0 ? <div className="table-state"><h2>Chưa có lịch trong tuần này</h2><p>{employee ? 'Lịch sẽ xuất hiện khi quản lý phân ca cho bạn.' : 'Chọn Phân ca để thêm lịch làm cho nhân viên.'}</p></div>
         : <><div className="table-scroll"><table><thead><tr><th>Ngày bắt đầu</th>{!employee && <th>Nhân viên</th>}<th>Ca làm</th><th>Thời gian</th><th>Giờ làm</th>{!employee && <th>Thao tác</th>}</tr></thead><tbody>
-          {data.items.map(row => <tr key={row.id}><td>{dateLabel(row.workDate)}</td>{!employee && <td><strong>{row.employeeName}</strong></td>}
+          {data.items.map(row => <tr key={row.id}><td>{dateLabel(row.workDate)}</td>{!employee && <td><strong>{row.employeeName}</strong>{overtimeById.has(row.employeeId) && <small className="overtime-badge">Vượt {overtimeById.get(row.employeeId)?.exceededMinutes} phút/tuần</small>}</td>}
             <td><strong>{row.shiftName}</strong>{row.draft && <small className="draft-badge">Bản nháp</small>}<small className="cell-detail">Nghỉ {row.breakMinutes} phút</small></td>
             <td>{instantLabel(row.startsAt)} → {instantLabel(row.endsAt)}</td><td>{row.workingMinutes} phút</td>
             {!employee && <td><button onClick={() => { setCancel(row); setError('') }} aria-label={'Hủy ca ' + row.employeeName + ' ' + row.shiftName}>Hủy ca</button></td>}</tr>)}
         </tbody></table></div><Pager page={data.page} pages={data.totalPages} onChange={setPage} /></>}
     </section>
     {modal === 'shifts' && <ShiftLibrary onClose={() => setModal(null)} />}
-    {modal === 'generate' && <ScheduleGeneration week={week} onClose={() => setModal(null)} onSaved={result => {
-      setModal(null)
-      setNotice(`Đã xếp ${result.createdCount} lượt ca.${result.belowMinimumEmployeeCount ? ` ${result.belowMinimumEmployeeCount} nhân viên chưa đạt giờ tối thiểu mục tiêu.` : ''}`)
-      refresh(value => value + 1)
-    }} />}
     {modal === 'assign' && <Assignment initialDate={week} onClose={() => setModal(null)} onSaved={date => { setModal(null); changeWeek(date); setNotice('Đã phân ca cho nhân viên.'); refresh(value => value + 1) }} />}
     {modal === 'draftAssign' && <Assignment draft initialDate={draftTarget?.workDate ?? week} initialShiftId={draftTarget?.shiftTemplateId} initialShiftName={draftTarget?.shiftName} onClose={() => setModal(null)} onSaved={() => {
       setModal(null)
       setNotice('Đã gán tay vào bản nháp.')
-      if (draftTarget) setDraftResult(current => current && ({ ...current, missingCount: Math.max(0, current.missingCount - 1),
-        shortages: current.shortages.map(item => item === draftTarget ? { ...item, missingCount: item.missingCount - 1 } : item).filter(item => item.missingCount > 0) }))
       refresh(value => value + 1)
     }} />}
     {cancel && <Modal title="Hủy ca làm" busy={busy} onClose={() => { setCancel(null); setError('') }}>
@@ -96,60 +105,6 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
 }
 function Pager({ page, pages, onChange }: { page: number; pages: number; onChange: (value: number) => void }) {
   return <div className="pagination"><button type="button" disabled={page === 0} onClick={() => onChange(page - 1)}>Trang trước</button><span>Trang {page + 1} / {Math.max(1, pages)}</span><button type="button" disabled={page + 1 >= pages} onClick={() => onChange(page + 1)}>Trang sau</button></div>
-}
-function ScheduleGeneration({ week, onClose, onSaved }: { week: string; onClose: () => void; onSaved: (result: GenerationResult) => void }) {
-  const [page, setPage] = useState(0)
-  const [shifts, setShifts] = useState<Page<Shift> | null>(null)
-  const [selectedShifts, setSelectedShifts] = useState<string[]>([])
-  const [selectedDates, setSelectedDates] = useState<string[]>([])
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  useEffect(() => {
-    let active = true
-    setShifts(null); setError('')
-    listShifts(page).then(value => { if (active) setShifts(value) })
-      .catch((failure: unknown) => { if (active) setError(errorMessage(failure)) })
-    return () => { active = false }
-  }, [page])
-  function toggle(value: string, current: string[], update: (value: string[]) => void) {
-    update(current.includes(value) ? current.filter(item => item !== value) : [...current, value])
-  }
-  async function generate(event: FormEvent) {
-    event.preventDefault()
-    if (busy || !selectedShifts.length || !selectedDates.length) {
-      setError('Hãy chọn ít nhất một mẫu ca và một ngày trong tuần.')
-      return
-    }
-    setBusy(true); setError('')
-    try { onSaved(await generateSchedule({ weekStart: week, shiftTemplateIds: selectedShifts, workDates: selectedDates })) }
-    catch (failure: unknown) { setError(errorMessage(failure)) }
-    finally { setBusy(false) }
-  }
-  return <Modal title="Xếp lịch tự động" busy={busy} onClose={onClose}>
-    <p className="muted">Chỉ nhân viên đã đăng ký mẫu ca cho tuần này và phù hợp vị trí mới được chọn. Hệ thống chỉ lưu khi đủ người cho tất cả ca đã chọn; lịch lưu tại đây sẽ hiện ngay cho nhân viên.</p>
-    <form onSubmit={event => { void generate(event) }}>
-      <fieldset disabled={busy} className="schedule-fields">
-        <h3>Ngày cần xếp</h3>
-        <div className="generation-options">{Array.from({ length: 7 }, (_, index) => addDays(week, index)).map(date =>
-          <label key={date}><input type="checkbox" checked={selectedDates.includes(date)}
-            onChange={() => toggle(date, selectedDates, setSelectedDates)} />{dateLabel(date)}</label>)}</div>
-        <h3>Mẫu ca cần xếp</h3>
-        {!shifts ? !error && <p role="status">Đang tải mẫu ca…</p> : <>
-          <div className="generation-options">{shifts.items.map(shift => <label key={shift.id}>
-            <input type="checkbox" checked={selectedShifts.includes(shift.id)} disabled={!shift.requiredPositionId}
-              onChange={() => toggle(shift.id, selectedShifts, setSelectedShifts)} />
-            {shift.name} · {shift.requiredHeadcount} người · {shift.requiredPosition ?? 'Thiếu vị trí'}
-          </label>)}</div>
-          {shifts.totalPages > 1 && <Pager page={page} pages={shifts.totalPages} onChange={setPage} />}
-        </>}
-        {error && <p role="alert" className="error">{error}</p>}
-        <div className="modal-actions"><button type="button" onClick={onClose}>Hủy</button>
-          <button className="primary" type="submit" disabled={busy || !selectedShifts.length || !selectedDates.length}>
-            {busy ? 'Đang xếp…' : 'Xác nhận xếp lịch'}
-          </button></div>
-      </fieldset>
-    </form>
-  </Modal>
 }
 function ShiftLibrary({ onClose }: { onClose: () => void }) {
   const [page, setPage] = useState(0)

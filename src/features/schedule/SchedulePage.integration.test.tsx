@@ -17,6 +17,9 @@ let shifts: Shift[] = []
 let role: Role = 'MANAGER'
 let requests: URLSearchParams[] = []
 let bodies: Record<string, unknown>[] = []
+let draftExists = false
+let warningShortages: { workDate: string; shiftTemplateId: string; shiftName: string; missingCount: number }[] = []
+let warningOvertime: { employeeId: string; employeeName: string; weeklyMinutes: number; exceededMinutes: number }[] = []
 const page = <T,>(items: T[], index = 0, totalPages = 1) => ({ items, page: index, size: 20, totalElements: items.length, totalPages })
 const server = setupServer(
   http.get(base + '/positions', () => HttpResponse.json(page([
@@ -42,18 +45,18 @@ const server = setupServer(
     bodies.push(await request.json() as Record<string, unknown>); rows = [row]
     return HttpResponse.json(row, { status: 201 })
   }),
-  http.post(base + '/work-schedules/generate', async ({ request }) => {
-    bodies.push(await request.json() as Record<string, unknown>); rows = [row]
-    return HttpResponse.json({ weekStart: '2026-11-02', createdCount: 1, maxWeeklyMinutes: 480,
-      minWeeklyMinutes: 0, belowMinimumEmployeeCount: 0, items: [row] })
-  }),
+  http.get(base + '/work-schedules/draft-warnings', () => HttpResponse.json({ weekStart: '2026-11-02',
+    draftExists, maxWeeklyMinutes: 480, missingCount: warningShortages.reduce((sum, item) => sum + item.missingCount, 0),
+    shortages: warningShortages, overtime: warningOvertime })),
   http.post(base + '/work-schedules/drafts', async ({ request }) => {
-    bodies.push(await request.json() as Record<string, unknown>); rows = [{ ...row, draft: true }]
+    bodies.push(await request.json() as Record<string, unknown>); rows = [{ ...row, draft: true }]; draftExists = true
+    warningShortages = [{ workDate: '2026-11-05', shiftTemplateId: shift.id, shiftName: shift.name, missingCount: 1 }]
     return HttpResponse.json({ weekStart: '2026-11-02', createdCount: 1, missingCount: 1,
-      shortages: [{ workDate: '2026-11-05', shiftTemplateId: shift.id, shiftName: shift.name, missingCount: 1 }], items: rows })
+      shortages: warningShortages, items: rows })
   }),
   http.post(base + '/work-schedules/draft-assignments', async ({ request }) => {
     bodies.push(await request.json() as Record<string, unknown>)
+    warningShortages = []
     return HttpResponse.json({ ...row, id: 'draft-manual', draft: true }, { status: 201 })
   }),
   http.delete(base + '/work-schedules/:id', () => { rows = []; return new HttpResponse(null, { status: 204 }) }),
@@ -66,6 +69,7 @@ beforeAll(() => {
 beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-05T03:00:00Z'))
   role = 'MANAGER'; rows = []; shifts = [shift]; requests = []; bodies = []
+  draftExists = false; warningShortages = []; warningOvertime = []
   sessionStorage.clear()
   saveSession({ accessToken: 'test-token', expiresAt: '2026-11-05T04:00:00Z' })
   window.location.hash = '/schedules'
@@ -168,47 +172,35 @@ it('assigns a selected employee and shift then reloads the week', async () => {
   expect(bodies).toEqual([{ employeeId: 'employee-1', shiftTemplateId: 'shift-1', workDate: '2026-11-02' }])
   expect(await screen.findByText('Ca đêm')).toBeInTheDocument()
 })
-it('generates selected dates and templates and reloads the week', async () => {
-  mount(); const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Xếp lịch đầy đủ (công bố ngay)' }))
-  const dialog = within(screen.getByRole('dialog', { name: 'Xếp lịch tự động' }))
-  await user.click(dialog.getByRole('checkbox', { name: '02/11/2026' }))
-  await user.click(dialog.getByRole('checkbox', { name: /Ca đêm/ }))
-  await user.click(dialog.getByRole('button', { name: 'Xác nhận xếp lịch' }))
-  expect(await screen.findByText('Đã xếp 1 lượt ca.')).toBeInTheDocument()
-  expect(bodies).toEqual([{ weekStart: '2026-11-02', shiftTemplateIds: ['shift-1'], workDates: ['2026-11-02'] }])
-})
-it('keeps generation open if the schedule is unfillable', async () => {
-  server.use(http.post(base + '/work-schedules/generate', () => HttpResponse.json({ message: 'Không đủ nhân viên đã đăng ký' }, { status: 409 })))
-  mount(); const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Xếp lịch đầy đủ (công bố ngay)' }))
-  const dialog = within(screen.getByRole('dialog', { name: 'Xếp lịch tự động' }))
-  await user.click(dialog.getByRole('checkbox', { name: '02/11/2026' }))
-  await user.click(dialog.getByRole('checkbox', { name: /Ca đêm/ }))
-  await user.click(dialog.getByRole('button', { name: 'Xác nhận xếp lịch' }))
-  expect(await dialog.findByRole('alert')).toHaveTextContent('Không đủ nhân viên đã đăng ký')
-  expect(dialog.getByRole('button', { name: 'Xác nhận xếp lịch' })).toBeEnabled()
-})
 it('does not offer automatic team scheduling to admins without a selected manager', async () => {
   role = 'ADMIN'; mount()
   expect(await screen.findByRole('heading', { name: 'Lịch làm việc' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Xếp lịch tuần (tạo nháp)' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Xếp lịch đầy đủ (công bố ngay)' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Xếp lịch tự động' })).not.toBeInTheDocument()
 })
 it('creates a private partial week draft with one click and offers manual assignment', async () => {
   mount(); const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tuần (tạo nháp)' }))
+  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tự động' }))
   expect(await screen.findByText(/Đã tạo bản nháp tuần: xếp thêm 1 lượt ca/)).toBeInTheDocument()
   expect(bodies).toEqual([{ weekStart: '2026-11-02' }])
   expect(await screen.findByText('Bản nháp')).toBeInTheDocument()
   expect(screen.getByText(/Ca đêm · thiếu 1 người/)).toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'Cảnh báo bản nháp lịch' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Gán tay' }))
   const dialog = within(screen.getByRole('dialog', { name: 'Gán tay vào bản nháp' }))
   await user.click(await dialog.findByRole('button', { name: /Nguyễn An/ }))
   await user.click(dialog.getByRole('button', { name: 'Lưu phân ca' }))
   expect(await screen.findByText('Đã gán tay vào bản nháp.')).toBeInTheDocument()
   expect(bodies[1]).toEqual({ employeeId: 'employee-1', shiftTemplateId: 'shift-1', workDate: '2026-11-05' })
-  expect(screen.queryByRole('region', { name: 'Ca còn thiếu người' })).not.toBeInTheDocument()
+  expect(await screen.findByText('Không có ca thiếu người hoặc nhân viên vượt giờ.')).toBeInTheDocument()
+})
+it('shows persisted shortage and overtime warnings beside a draft employee after reopening', async () => {
+  draftExists = true; rows = [{ ...row, draft: true }]
+  warningShortages = [{ workDate: '2026-11-06', shiftTemplateId: shift.id, shiftName: shift.name, missingCount: 2 }]
+  warningOvertime = [{ employeeId: row.employeeId, employeeName: row.employeeName, weeklyMinutes: 600, exceededMinutes: 120 }]
+  mount()
+  expect(await screen.findByText(/Ca đêm · thiếu 2 người/)).toBeInTheDocument()
+  expect(screen.getByText(/Nguyễn An · 600 phút\/tuần · vượt 120 phút/)).toBeInTheDocument()
+  expect(screen.getByText('Vượt 120 phút/tuần')).toBeInTheDocument()
 })
 it('lets a manager add to a draft after reopening the schedule page', async () => {
   mount(); const user = userEvent.setup()
