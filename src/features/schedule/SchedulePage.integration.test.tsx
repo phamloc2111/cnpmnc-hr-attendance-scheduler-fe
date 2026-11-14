@@ -17,6 +17,9 @@ let shifts: Shift[] = []
 let role: Role = 'MANAGER'
 let requests: URLSearchParams[] = []
 let bodies: Record<string, unknown>[] = []
+let draftExists = false
+let warningShortages: { workDate: string; shiftTemplateId: string; shiftName: string; missingCount: number }[] = []
+let warningOvertime: { employeeId: string; employeeName: string; weeklyMinutes: number; exceededMinutes: number }[] = []
 const page = <T,>(items: T[], index = 0, totalPages = 1) => ({ items, page: index, size: 20, totalElements: items.length, totalPages })
 const server = setupServer(
   http.get(base + '/positions', () => HttpResponse.json(page([
@@ -42,6 +45,20 @@ const server = setupServer(
     bodies.push(await request.json() as Record<string, unknown>); rows = [row]
     return HttpResponse.json(row, { status: 201 })
   }),
+  http.get(base + '/work-schedules/draft-warnings', () => HttpResponse.json({ weekStart: '2026-11-02',
+    draftExists, maxWeeklyMinutes: 480, missingCount: warningShortages.reduce((sum, item) => sum + item.missingCount, 0),
+    shortages: warningShortages, overtime: warningOvertime })),
+  http.post(base + '/work-schedules/drafts', async ({ request }) => {
+    bodies.push(await request.json() as Record<string, unknown>); rows = [{ ...row, draft: true }]; draftExists = true
+    warningShortages = [{ workDate: '2026-11-05', shiftTemplateId: shift.id, shiftName: shift.name, missingCount: 1 }]
+    return HttpResponse.json({ weekStart: '2026-11-02', createdCount: 1, missingCount: 1,
+      shortages: warningShortages, items: rows })
+  }),
+  http.post(base + '/work-schedules/draft-assignments', async ({ request }) => {
+    bodies.push(await request.json() as Record<string, unknown>)
+    warningShortages = []
+    return HttpResponse.json({ ...row, id: 'draft-manual', draft: true }, { status: 201 })
+  }),
   http.delete(base + '/work-schedules/:id', () => { rows = []; return new HttpResponse(null, { status: 204 }) }),
 )
 beforeAll(() => {
@@ -52,6 +69,7 @@ beforeAll(() => {
 beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-05T03:00:00Z'))
   role = 'MANAGER'; rows = []; shifts = [shift]; requests = []; bodies = []
+  draftExists = false; warningShortages = []; warningOvertime = []
   sessionStorage.clear()
   saveSession({ accessToken: 'test-token', expiresAt: '2026-11-05T04:00:00Z' })
   window.location.hash = '/schedules'
@@ -153,6 +171,65 @@ it('assigns a selected employee and shift then reloads the week', async () => {
   expect(await screen.findByText('Đã phân ca cho nhân viên.')).toBeInTheDocument()
   expect(bodies).toEqual([{ employeeId: 'employee-1', shiftTemplateId: 'shift-1', workDate: '2026-11-02' }])
   expect(await screen.findByText('Ca đêm')).toBeInTheDocument()
+})
+it('does not offer automatic team scheduling to admins without a selected manager', async () => {
+  role = 'ADMIN'; mount()
+  expect(await screen.findByRole('heading', { name: 'Lịch làm việc' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Xếp lịch tự động' })).not.toBeInTheDocument()
+})
+it('selects a day and shift before creating a private partial week draft', async () => {
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tự động' }))
+  const selection = within(screen.getByRole('dialog', { name: 'Chọn ngày và ca cần xếp' }))
+  expect(bodies).toHaveLength(0)
+  expect(await selection.findByRole('button', { name: 'Tạo bản nháp' })).toBeDisabled()
+  await user.click(await selection.findByRole('checkbox', { name: 'Thứ Năm 05/11/2026 · Ca đêm' }))
+  await user.click(selection.getByRole('button', { name: 'Tạo bản nháp' }))
+  expect(await screen.findByText(/Đã tạo bản nháp tuần: xếp thêm 1 lượt ca/)).toBeInTheDocument()
+  expect(bodies).toEqual([{ weekStart: '2026-11-02', slots: [{ workDate: '2026-11-05', shiftTemplateId: shift.id }] }])
+  expect(await screen.findByText('Bản nháp')).toBeInTheDocument()
+  expect(screen.queryByText(/Ca đêm · thiếu 1 người/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Gán vào nháp' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Cảnh báo bản nháp/ }))
+  const warningsDialog = within(screen.getByRole('dialog', { name: 'Cảnh báo bản nháp lịch' }))
+  expect(await warningsDialog.findByText(/Ca đêm · thiếu 1 người/)).toBeInTheDocument()
+  await user.click(warningsDialog.getByRole('button', { name: 'Gán tay' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Gán tay vào bản nháp' }))
+  await user.click(await dialog.findByRole('button', { name: /Nguyễn An/ }))
+  await user.click(dialog.getByRole('button', { name: 'Lưu phân ca' }))
+  expect(await screen.findByText('Đã gán tay vào bản nháp.')).toBeInTheDocument()
+  expect(bodies[1]).toEqual({ employeeId: 'employee-1', shiftTemplateId: 'shift-1', workDate: '2026-11-05' })
+  expect(await within(screen.getByRole('dialog', { name: 'Cảnh báo bản nháp lịch' })).findByText('Không có ca đã chọn thiếu người hoặc nhân viên vượt giờ.')).toBeInTheDocument()
+})
+it('does not offer shifts whose required position is inactive', async () => {
+  server.use(http.get(base + '/positions', () => HttpResponse.json(page([
+    { id: 'position-cashier', name: 'Thu ngân', active: false, version: 1 },
+  ]))))
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Xếp lịch tự động' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Chọn ngày và ca cần xếp' }))
+  expect(await dialog.findByText(/Không có mẫu ca với vị trí đang hoạt động/)).toBeInTheDocument()
+  expect(dialog.queryByRole('button', { name: 'Tạo bản nháp' })).not.toBeInTheDocument()
+  expect(bodies).toHaveLength(0)
+})
+it('shows persisted shortage and overtime warnings beside a draft employee after reopening', async () => {
+  draftExists = true; rows = [{ ...row, draft: true }]
+  warningShortages = [{ workDate: '2026-11-06', shiftTemplateId: shift.id, shiftName: shift.name, missingCount: 2 }]
+  warningOvertime = [{ employeeId: row.employeeId, employeeName: row.employeeName, weeklyMinutes: 600, exceededMinutes: 120 }]
+  mount(); const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: /Cảnh báo bản nháp/ }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Cảnh báo bản nháp lịch' }))
+  expect(await dialog.findByText(/Ca đêm · thiếu 2 người/)).toBeInTheDocument()
+  expect(dialog.getByText(/Nguyễn An · 600 phút\/tuần · vượt 120 phút/)).toBeInTheDocument()
+  expect(screen.getByText('Vượt 120 phút/tuần')).toBeInTheDocument()
+})
+it('shows an empty warning popup before a draft exists and removes standalone draft assignment', async () => {
+  mount(); const user = userEvent.setup()
+  expect(screen.queryByRole('button', { name: 'Gán vào nháp' })).not.toBeInTheDocument()
+  await user.click(await screen.findByRole('button', { name: 'Cảnh báo bản nháp' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Cảnh báo bản nháp lịch' }))
+  expect(await dialog.findByText('Chưa có bản nháp lịch cho tuần này.')).toBeInTheDocument()
+  expect(dialog.queryByRole('button', { name: 'Gán tay' })).not.toBeInTheDocument()
 })
 it('keeps assignment open and displays overlap errors', async () => {
   server.use(http.post(base + '/work-schedules', () => HttpResponse.json({ message: 'Nhân viên đã có ca trùng giờ' }, { status: 409 })))

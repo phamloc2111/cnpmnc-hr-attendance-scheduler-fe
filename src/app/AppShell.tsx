@@ -76,8 +76,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     {!home && <aside className="sidebar" ref={sidebar} id="workspace-navigation" aria-label="Điều hướng không gian làm việc">
       <div className="shell-brand-row"><a className="brand" href={'#' + homePaths[role]}><span className="brand-mark">S</span>ShiftSync</a><button className="shell-close-menu" aria-label="Đóng menu" onClick={() => setMenuOpen(false)}><HomeIcon name="close" /></button></div>
       <p className="nav-label">KHÔNG GIAN LÀM VIỆC</p><nav aria-label="Menu chính">{links.map(navLink)}
-        {!employee && <button disabled><HomeIcon name="report" size={19} /><span>Báo cáo</span><small>Sắp có</small></button>}
-        {role === 'ADMIN' && <><p className="nav-label">QUẢN TRỊ HỆ THỐNG</p>{navLink({ path: '/accounts', label: 'Tài khoản', icon: 'shield' })}<button disabled><HomeIcon name="settings" size={19} /><span>Cài đặt</span><small>Sắp có</small></button></>}
+        {role === 'ADMIN' && <><p className="nav-label">QUẢN TRỊ HỆ THỐNG</p>{navLink({ path: '/accounts', label: 'Tài khoản', icon: 'shield' })}</>}
       </nav>
       <div className="sidebar-user"><span className="avatar">{initials}</span><div><strong>{name}</strong><small>{roleLabels[role]}</small></div></div>
     </aside>}

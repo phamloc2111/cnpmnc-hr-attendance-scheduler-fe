@@ -3,20 +3,27 @@ import type { FormEvent, DragEvent } from 'react'
 import { Modal } from '../../shared/components/Modal'
 import { addDays, dateLabel, instantLabel, monday, timeLabel, vietnamToday } from '../../shared/utils/dates'
 import { listAccounts } from '../accounts'
+import { useAuth } from '../auth/AuthProvider'
 import { PositionSelect } from '../positions'
-import { assignShift, cancelSchedule, createShift, listSchedules, listShifts, publishSchedule, reassignSchedule } from './api'
-import type { Page, Shift, WorkSchedule } from './types'
+import { assignDraftShift, assignShift, cancelSchedule, createShift, getDraftWarnings, listSchedules, listShifts, publishSchedule, reassignSchedule } from './api'
+import type { DraftGenerationResult, DraftShortage, DraftWarnings, Page, Shift, WorkSchedule } from './types'
+import { DraftSelectionModal } from './DraftSelectionModal'
+import { DraftWarningsModal } from './DraftWarningsModal'
 import './schedule.css'
 
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'Không thể tải dữ liệu.' }
 
 export function SchedulePage({ employee = false }: { employee?: boolean }) {
+  const { user } = useAuth()
   const [week, setWeek] = useState(() => monday(vietnamToday()))
   const [page, setPage] = useState(0)
   const [data, setData] = useState<Page<WorkSchedule> | null>(null)
   const [error, setError] = useState('')
   const [revision, refresh] = useState(0)
-  const [modal, setModal] = useState<'assign' | 'shifts' | 'publish' | null>(null)
+  const [modal, setModal] = useState<'assign' | 'draftAssign' | 'shifts' | 'generate' | 'warnings' | 'publish' | null>(null)
+  const [draftTarget, setDraftTarget] = useState<DraftShortage | null>(null)
+  const [warnings, setWarnings] = useState<DraftWarnings | null>(null)
+  const [warningsError, setWarningsError] = useState('')
   const [cancel, setCancel] = useState<WorkSchedule | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -35,7 +42,21 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     return () => { active = false }
   }, [week, page, revision])
 
+  useEffect(() => {
+    if (employee || user?.role !== 'MANAGER') return
+    let active = true
+    setWarnings(null); setWarningsError('')
+    getDraftWarnings(week).then(value => { if (active) setWarnings(value) })
+      .catch((failure: unknown) => { if (active) setWarningsError(errorMessage(failure)) })
+    return () => { active = false }
+  }, [employee, user?.role, week, revision])
+
   function changeWeek(value: string) { if (value) { setWeek(monday(value)); setPage(0) } }
+  function draftSaved(result: DraftGenerationResult) {
+    setModal(null)
+    setNotice(`Đã tạo bản nháp tuần: xếp thêm ${result.createdCount} lượt ca.${result.missingCount ? ` Còn thiếu ${result.missingCount} vị trí để quản lý gán tay.` : ''}`)
+    refresh(value => value + 1)
+  }
 
   async function confirmCancel() {
     if (!cancel || busy) return
@@ -45,7 +66,6 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     finally { setBusy(false) }
   }
 
-  // Xử lý kéo thả chuyển ngày cho ca làm
   function handleDragStart(shift: WorkSchedule) {
     if (employee) return
     setDraggedShift(shift)
@@ -81,7 +101,6 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     }
   }
 
-  // Xử lý công bố lịch tuần
   async function handlePublish(confirmOvertime = false) {
     setBusy(true); setError(''); setNotice('')
     try {
@@ -107,6 +126,7 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     }
   }
 
+  const overtimeById = new Map(warnings?.overtime.map(item => [item.employeeId, item]) ?? [])
   return <main className="workspace accounts-page schedule-page">
     <div className="page-heading">
       <div>
@@ -119,6 +139,10 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
           {viewMode === 'grid' ? 'Xem danh sách' : 'Xem dạng bảng kéo thả'}
         </button>
         <button onClick={() => setModal('shifts')}>Mẫu ca</button>
+        {user?.role === 'MANAGER' && <>
+          <button onClick={() => setModal('generate')}>Xếp lịch tự động</button>
+          <button onClick={() => setModal('warnings')}>Cảnh báo bản nháp{warnings?.missingCount ? ` (${warnings.missingCount})` : ''}</button>
+        </>}
         <button onClick={() => setModal('assign')}>Phân ca</button>
         <button className="primary" onClick={() => void handlePublish(false)}>Công bố lịch</button>
       </div>}
@@ -213,8 +237,8 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
                 <tbody>
                   {data.items.map(row => <tr key={row.id}>
                     <td>{dateLabel(row.workDate)}</td>
-                    {!employee && <td><strong>{row.employeeName}</strong></td>}
-                    <td><strong>{row.shiftName}</strong><small className="cell-detail">Nghỉ {row.breakMinutes} phút</small></td>
+                    {!employee && <td><strong>{row.employeeName}</strong>{overtimeById.has(row.employeeId) && <small className="overtime-badge">Vượt {overtimeById.get(row.employeeId)?.exceededMinutes} phút/tuần</small>}</td>}
+                    <td><strong>{row.shiftName}</strong>{row.draft && <small className="draft-badge">Bản nháp</small>}<small className="cell-detail">Nghỉ {row.breakMinutes} phút</small></td>
                     <td>{instantLabel(row.startsAt)} → {instantLabel(row.endsAt)}</td>
                     <td>{row.workingMinutes} phút</td>
                     <td>
@@ -233,8 +257,15 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
     </section>
 
     {modal === 'shifts' && <ShiftLibrary onClose={() => setModal(null)} />}
+    {modal === 'generate' && <DraftSelectionModal week={week} onClose={() => setModal(null)} onSaved={draftSaved} />}
+    {modal === 'warnings' && <DraftWarningsModal warnings={warnings} error={warningsError} onClose={() => setModal(null)}
+      onAssign={shortage => { setDraftTarget(shortage); setModal('draftAssign') }} />}
     {modal === 'assign' && <Assignment initialDate={week} onClose={() => setModal(null)} onSaved={date => { setModal(null); changeWeek(date); setNotice('Đã phân ca cho nhân viên.'); refresh(value => value + 1) }} />}
-
+    {modal === 'draftAssign' && <Assignment draft initialDate={draftTarget?.workDate ?? week} initialShiftId={draftTarget?.shiftTemplateId} initialShiftName={draftTarget?.shiftName} onClose={() => setModal(null)} onSaved={() => {
+      setModal('warnings')
+      setNotice('Đã gán tay vào bản nháp.')
+      refresh(value => value + 1)
+    }} />}
     {modal === 'publish' && overtimeWarning && <Modal title="Xác nhận cảnh báo vượt giờ" busy={busy} onClose={() => { setModal(null); setOvertimeWarning(null) }}>
       <p style={{ color: '#c62828', fontWeight: 600 }}>Cảnh báo:</p>
       <p>{overtimeWarning}</p>
@@ -246,7 +277,6 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
         </button>
       </div>
     </Modal>}
-
     {cancel && <Modal title="Hủy ca làm" busy={busy} onClose={() => { setCancel(null); setError('') }}>
       <p>Hủy ca {cancel.shiftName} của {cancel.employeeName} ngày {dateLabel(cancel.workDate)}?</p>
       {error && <p role="alert" className="error">{error}</p>}
@@ -314,7 +344,10 @@ function ShiftLibrary({ onClose }: { onClose: () => void }) {
   </Modal>
 }
 
-function Assignment({ initialDate, onClose, onSaved }: { initialDate: string; onClose: () => void; onSaved: (date: string) => void }) {
+function Assignment({ initialDate, initialShiftId = '', initialShiftName = '', draft = false, onClose, onSaved }: {
+  initialDate: string; initialShiftId?: string; initialShiftName?: string; draft?: boolean;
+  onClose: () => void; onSaved: (date: string) => void
+}) {
   const [employeeId, setEmployeeId] = useState('')
   const [employeeName, setEmployeeName] = useState('')
   const [query, setQuery] = useState('')
@@ -324,7 +357,7 @@ function Assignment({ initialDate, onClose, onSaved }: { initialDate: string; on
   const [employeeError, setEmployeeError] = useState('')
   const [shifts, setShifts] = useState<Page<Shift> | null>(null)
   const [shiftPage, setShiftPage] = useState(0)
-  const [shiftId, setShiftId] = useState('')
+  const [shiftId, setShiftId] = useState(initialShiftId)
   const [shiftError, setShiftError] = useState('')
   const [revision, refresh] = useState(0)
   const [date, setDate] = useState(initialDate)
@@ -352,11 +385,11 @@ function Assignment({ initialDate, onClose, onSaved }: { initialDate: string; on
     if (busy) return
     if (!employeeId || !shiftId) { setError('Vui lòng chọn nhân viên và mẫu ca.'); return }
     setBusy(true); setError('')
-    try { await assignShift(employeeId, shiftId, date); onSaved(date) }
+    try { await (draft ? assignDraftShift : assignShift)(employeeId, shiftId, date); onSaved(date) }
     catch (failure: unknown) { setError(errorMessage(failure)) }
     finally { setBusy(false) }
   }
-  return <Modal title="Phân ca làm việc" busy={busy} onClose={onClose}><form onSubmit={event => { void save(event) }}>
+  return <Modal title={draft ? 'Gán tay vào bản nháp' : 'Phân ca làm việc'} busy={busy} onClose={onClose}><form onSubmit={event => { void save(event) }}>
     <fieldset disabled={busy} className="schedule-fields">
       <label htmlFor="assign-employee">Nhân viên</label>
       <input id="assign-employee" placeholder="Tìm theo tên hoặc email" value={query} onChange={event => { setQuery(event.target.value); setEmployeeId(''); setEmployeeName(''); setEmployeePage(0) }} />
@@ -368,10 +401,10 @@ function Assignment({ initialDate, onClose, onSaved }: { initialDate: string; on
       <label htmlFor="assign-shift">Mẫu ca</label>
       {shiftError ? <p role="alert">{shiftError} <button type="button" onClick={() => refresh(value => value + 1)}>Thử lại</button></p>
         : !shifts ? <p role="status">Đang tải mẫu ca…</p>
-        : <><select id="assign-shift" required value={shiftId} onChange={event => setShiftId(event.target.value)}><option value="">Chọn mẫu ca</option>{shifts.items.map(shift => <option key={shift.id} value={shift.id}>{shift.name} · {shift.requiredHeadcount} người · {shift.requiredPosition ?? 'Chưa khai báo vị trí'} · {timeLabel(shift.startTime)}–{timeLabel(shift.endTime)}{shift.overnight ? ' (+1 ngày)' : ''}</option>)}</select>
-          {shifts.totalPages > 1 && <Pager page={shiftPage} pages={shifts.totalPages} onChange={value => { setShiftPage(value); setShiftId('') }} />}
+        : <><select id="assign-shift" required disabled={draft && !!initialShiftId} value={shiftId} onChange={event => setShiftId(event.target.value)}><option value="">Chọn mẫu ca</option>{initialShiftId && !shifts.items.some(shift => shift.id === initialShiftId) && <option value={initialShiftId}>{initialShiftName}</option>}{shifts.items.map(shift => <option key={shift.id} value={shift.id}>{shift.name} · {shift.requiredHeadcount} người · {shift.requiredPosition ?? 'Chưa khai báo vị trí'} · {timeLabel(shift.startTime)}–{timeLabel(shift.endTime)}{shift.overnight ? ' (+1 ngày)' : ''}</option>)}</select>
+          {shifts.totalPages > 1 && !(draft && initialShiftId) && <Pager page={shiftPage} pages={shifts.totalPages} onChange={value => { setShiftPage(value); if (!draft) setShiftId('') }} />}
           {shifts.items.length === 0 && <p>Chưa có mẫu ca. Đóng hộp thoại và vào Mẫu ca để tạo trước.</p>}</>}
-      <label htmlFor="assign-date">Ngày bắt đầu ca</label><input id="assign-date" type="date" required value={date} onChange={event => setDate(event.target.value)} />
+      <label htmlFor="assign-date">Ngày bắt đầu ca</label><input id="assign-date" type="date" required disabled={draft && !!initialShiftId} value={date} onChange={event => setDate(event.target.value)} />
       <small className="muted">Ca qua đêm kết thúc vào ngày tiếp theo. Hệ thống kiểm tra trùng giờ với mọi ca đã phân.</small>
       {error && <p role="alert" className="error">{error}</p>}
       <div className="modal-actions"><button type="button" onClick={onClose}>Hủy</button><button className="primary" type="submit" disabled={!employeeId || !shiftId || !date}>{busy ? 'Đang lưu…' : 'Lưu phân ca'}</button></div>
