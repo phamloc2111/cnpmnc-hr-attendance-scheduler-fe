@@ -41,7 +41,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     return () => window.removeEventListener('keydown', close)
   }, [])
   const employee = role === 'EMPLOYEE'
-  const home = employee && ['/employee', '/my-schedule', '/registrations', '/my-diligence'].includes(path)
+  const home = false
   const links: NavigationItem[] = [{ path: homePaths[role], label: 'Tổng quan', icon: 'dashboard' }]
   if (role === 'ADMIN') links.push({ path: '/management', label: 'Không gian quản lý', icon: 'team' })
   links.push(...(employee ? [
