@@ -64,6 +64,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     { path: '/attendance-results', label: 'Phân loại ca làm', icon: 'check' as const },
     { path: '/explanations-management', label: 'Duyệt giải trình', icon: 'check' as const },
     { path: '/shift-pass', label: 'Biến động pass ca', icon: 'check' as const },
+    { path: '/audit-logs', label: 'Nhật ký thay đổi', icon: 'report' as const },
   ]))
   if (role === 'MANAGER') links.push({ path: '/registrations-management', label: 'Đăng ký ca', icon: 'check' })
   const current = links.find(link => link.path === path)?.label ?? (path === '/accounts' ? 'Tài khoản' : 'Không gian làm việc')
