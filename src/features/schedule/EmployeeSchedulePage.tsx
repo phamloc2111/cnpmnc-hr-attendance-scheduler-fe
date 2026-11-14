@@ -5,6 +5,8 @@ import { addDays, dateLabel, instantLabel, monday, vietnamToday } from '../../sh
 import { loadEmployeeWeek, calendarSegments } from './week-calendar'
 import { WeekTimeGrid } from './WeekTimeGrid'
 import type { WorkSchedule } from './types'
+import { loadOwnPriority } from '../priority/api'
+import type { Own } from '../priority/api'
 import './employee-schedule.css'
 
 export function EmployeeSchedulePage({ name, email, onChangePassword, onLogout, loggingOut = false }: {
@@ -12,20 +14,28 @@ export function EmployeeSchedulePage({ name, email, onChangePassword, onLogout, 
 }) {
   const [week, setWeek] = useState(() => monday(vietnamToday()))
   const [data, setData] = useState<WorkSchedule[] | null>(null)
+  const [priority, setPriority] = useState<Own | null>(null)
   const [error, setError] = useState('')
   const [revision, refresh] = useState(0)
   const [profile, setProfile] = useState(false)
   const [detail, setDetail] = useState<WorkSchedule | null>(null)
+
   useEffect(() => {
     let active = true
     setData(null); setError(''); setDetail(null)
     loadEmployeeWeek(week).then(result => { if (active) setData(result) })
       .catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : 'Không thể tải lịch làm việc.') })
+    
+    // Tải điểm ưu tiên tuần của nhân viên (US28)
+    loadOwnPriority(week).then(p => { if (active) setPriority(p) }).catch(() => { if (active) setPriority(null) })
+
     return () => { active = false }
   }, [week, revision])
+
   function changeWeek(value: string) { if (value) { setWeek(monday(value)) } }
   const range = dateLabel(week) + ' – ' + dateLabel(addDays(week, 6))
   const count = data ? new Set(calendarSegments(week, data).map(segment => segment.shift.id)).size : 0
+
   return <main className="workspace employee-home employee-week-page">
     <header className="home-hero employee-week-hero">
       <div className="home-hero-top"><a className="home-brand" href="#/employee" aria-label="Về trang chủ ShiftSync"><span>S</span><strong>ShiftSync</strong></a>
@@ -42,13 +52,22 @@ export function EmployeeSchedulePage({ name, email, onChangePassword, onLogout, 
           <button className="employee-reload-week" onClick={() => refresh(value => value + 1)}><HomeIcon name="refresh" size={15} />Tải lại</button></div>
         <div className="employee-week-range"><HomeIcon name="calendar" size={16} /><strong>{range}</strong></div>
       </section>
+
+      {priority && (
+        <section className="priority-own-card" style={{ margin: '0 0 16px 0' }}>
+          <span>Điểm ưu tiên tuần này ({dateLabel(priority.weekStart)})</span>
+          <strong>{priority.score}<small>/100</small></strong>
+          <p>Điểm dùng khi quản lý xếp ca, cập nhật tự động theo chuyên cần và lịch sử làm việc.</p>
+        </section>
+      )}
+
       <section className="employee-week-results" aria-label="Danh sách ca trong tuần">
         <div className="employee-week-list-heading"><h2>Ca làm trong tuần</h2>{data && !error && <span>{count} ca đã phân</span>}</div>
         {error ? <div className="employee-week-state"><span className="employee-week-state-icon"><HomeIcon name="refresh" size={29} /></span><h2>Chưa tải được lịch</h2><p role="alert">{error}</p><button onClick={() => refresh(value => value + 1)}>Thử lại</button></div>
           : !data ? <p className="employee-week-state" role="status">Đang tải lịch làm việc…</p>
           : <WeekTimeGrid week={week} shifts={data} onSelect={setDetail} />}
       </section>
-      <p className="employee-week-note">Bấm vào ca để xem chi tiết. Ca qua đêm được hiển thị ở cả hai ngày.</p>
+      <p className="employee-week-note">Bấm vào ca để xem chi tiết. Lịch chỉ hiển thị khi đã được quản lý công bố.</p>
     </div>
     <nav className="home-bottom-nav registration-four-nav employee-week-nav" aria-label="Điều hướng nhân viên"><a href="#/employee"><span><HomeIcon name="clock" size={21} /></span>Trang chủ</a>
       <a className="active" href="#/my-schedule" aria-current="page"><span><HomeIcon name="calendar" size={21} /></span>Lịch của tôi</a>
