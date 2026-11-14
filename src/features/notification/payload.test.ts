@@ -17,3 +17,7 @@ it('builds only an internal registration URL even for unexpected input', () => {
   expect(notificationUrl('2026-11-16')).toBe('/?registrationWeek=2026-11-16#/registrations')
   expect(notificationUrl('https://evil.example')).toBe('/?registrationWeek=#/registrations')
 })
+it('routes schedule published and shift reminder notifications to employee schedule', () => {
+  expect(notificationUrl({ ...data, type: 'SCHEDULE_PUBLISHED' })).toBe('#/employee-schedule')
+  expect(notificationUrl({ ...data, type: 'SHIFT_REMINDER' })).toBe('#/employee-schedule')
+})
