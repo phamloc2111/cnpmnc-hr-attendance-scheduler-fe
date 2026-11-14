@@ -3,6 +3,7 @@ export type Shift = { id: string; name: string; startTime: string; endTime: stri
 export type WorkSchedule = { id: string; employeeId: string; employeeName: string; shiftTemplateId: string; workDate: string; shiftName: string; startsAt: string; endsAt: string; breakMinutes: number; workingMinutes: number; timezone: string; requiredPosition?: string | null; draft?: boolean }
 export type ShiftInput = { name: string; startTime: string; endTime: string; breakMinutes: number; requiredHeadcount: number; requiredPositionId: string; overnight: boolean }
 export type DraftShortage = { workDate: string; shiftTemplateId: string; shiftName: string; missingCount: number }
+export type DraftSlot = { workDate: string; shiftTemplateId: string }
 export type DraftGenerationResult = { weekStart: string; createdCount: number; missingCount: number; shortages: DraftShortage[]; items: WorkSchedule[] }
 export type DraftOvertime = { employeeId: string; employeeName: string; weeklyMinutes: number; exceededMinutes: number }
 export type DraftWarnings = { weekStart: string; draftExists: boolean; maxWeeklyMinutes: number; missingCount: number; shortages: DraftShortage[]; overtime: DraftOvertime[] }

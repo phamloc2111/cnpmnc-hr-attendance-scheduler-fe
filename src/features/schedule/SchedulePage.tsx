@@ -5,8 +5,10 @@ import { addDays, dateLabel, instantLabel, monday, timeLabel, vietnamToday } fro
 import { listAccounts } from '../accounts'
 import { useAuth } from '../auth/AuthProvider'
 import { PositionSelect } from '../positions'
-import { assignDraftShift, assignShift, cancelSchedule, createShift, generateWeeklyDraft, getDraftWarnings, listSchedules, listShifts } from './api'
-import type { DraftShortage, DraftWarnings, Page, Shift, WorkSchedule } from './types'
+import { assignDraftShift, assignShift, cancelSchedule, createShift, getDraftWarnings, listSchedules, listShifts } from './api'
+import type { DraftGenerationResult, DraftShortage, DraftWarnings, Page, Shift, WorkSchedule } from './types'
+import { DraftSelectionModal } from './DraftSelectionModal'
+import { DraftWarningsModal } from './DraftWarningsModal'
 import './schedule.css'
 
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'Không thể tải dữ liệu.' }
@@ -17,12 +19,10 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
   const [data, setData] = useState<Page<WorkSchedule> | null>(null)
   const [error, setError] = useState('')
   const [revision, refresh] = useState(0)
-  const [modal, setModal] = useState<'assign' | 'draftAssign' | 'shifts' | null>(null)
+  const [modal, setModal] = useState<'assign' | 'draftAssign' | 'shifts' | 'generate' | 'warnings' | null>(null)
   const [draftTarget, setDraftTarget] = useState<DraftShortage | null>(null)
   const [warnings, setWarnings] = useState<DraftWarnings | null>(null)
   const [warningsError, setWarningsError] = useState('')
-  const [draftBusy, setDraftBusy] = useState(false)
-  const [draftError, setDraftError] = useState('')
   const [cancel, setCancel] = useState<WorkSchedule | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -41,16 +41,11 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
       .catch((failure: unknown) => { if (active) setWarningsError(errorMessage(failure)) })
     return () => { active = false }
   }, [employee, user?.role, week, revision])
-  function changeWeek(value: string) { if (value) { setWeek(monday(value)); setPage(0); setDraftError('') } }
-  async function createDraft() {
-    if (draftBusy) return
-    setDraftBusy(true); setDraftError(''); setNotice('')
-    try {
-      const result = await generateWeeklyDraft(week)
-      setNotice(`Đã tạo bản nháp tuần: xếp thêm ${result.createdCount} lượt ca.${result.missingCount ? ` Còn thiếu ${result.missingCount} vị trí để quản lý gán tay.` : ''}`)
-      refresh(value => value + 1)
-    } catch (failure: unknown) { setDraftError(errorMessage(failure)) }
-    finally { setDraftBusy(false) }
+  function changeWeek(value: string) { if (value) { setWeek(monday(value)); setPage(0) } }
+  function draftSaved(result: DraftGenerationResult) {
+    setModal(null)
+    setNotice(`Đã tạo bản nháp tuần: xếp thêm ${result.createdCount} lượt ca.${result.missingCount ? ` Còn thiếu ${result.missingCount} vị trí để quản lý gán tay.` : ''}`)
+    refresh(value => value + 1)
   }
   async function confirmCancel() {
     if (!cancel || busy) return
@@ -62,18 +57,8 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
   const overtimeById = new Map(warnings?.overtime.map(item => [item.employeeId, item]) ?? [])
   return <main className="workspace accounts-page schedule-page">
     <div className="page-heading"><div><p className="eyebrow">XẾP LỊCH</p><h1>{employee ? 'Lịch của tôi' : 'Lịch làm việc'}</h1><p className="muted">Theo tuần · Giờ Việt Nam (UTC+7) · Ngày làm việc là ngày bắt đầu ca.</p></div>
-      {!employee && <div className="actions"><button onClick={() => setModal('shifts')}>Mẫu ca</button>{user?.role === 'MANAGER' && <><button className="primary" disabled={draftBusy} onClick={() => { void createDraft() }}>{draftBusy ? 'Đang tạo nháp…' : 'Xếp lịch tự động'}</button><button onClick={() => { setDraftTarget(null); setModal('draftAssign') }}>Gán vào nháp</button></>}<button onClick={() => setModal('assign')}>Phân ca</button></div>}</div>
+      {!employee && <div className="actions"><button onClick={() => setModal('shifts')}>Mẫu ca</button>{user?.role === 'MANAGER' && <><button className="primary" onClick={() => setModal('generate')}>Xếp lịch tự động</button><button onClick={() => setModal('warnings')}>Cảnh báo bản nháp{warnings?.missingCount ? ` (${warnings.missingCount})` : ''}</button></>}<button onClick={() => setModal('assign')}>Phân ca</button></div>}</div>
     {notice && <p role="status" className="success">{notice}</p>}
-    {draftError && <p role="alert" className="error">{draftError}</p>}
-    {warningsError && <p role="alert" className="error">Không tải được cảnh báo bản nháp: {warningsError}</p>}
-    {warnings?.draftExists && <section className="draft-shortages" aria-label="Cảnh báo bản nháp lịch">
-      <h2>Cảnh báo bản nháp lịch</h2>
-      {warnings.shortages.length === 0 && warnings.overtime.length === 0 && <p>Không có ca thiếu người hoặc nhân viên vượt giờ.</p>}
-      {warnings.shortages.length > 0 && <><h3>Ca thiếu người ({warnings.missingCount} vị trí)</h3><ul>{warnings.shortages.map(shortage =>
-        <li key={shortage.workDate + shortage.shiftTemplateId}><span>{dateLabel(shortage.workDate)} · {shortage.shiftName} · thiếu {shortage.missingCount} người</span><button onClick={() => { setDraftTarget(shortage); setModal('draftAssign') }}>Gán tay</button></li>)}</ul></>}
-      {warnings.overtime.length > 0 && <><h3>Nhân viên vượt giờ</h3><ul>{warnings.overtime.map(item =>
-        <li key={item.employeeId}>{item.employeeName} · {item.weeklyMinutes} phút/tuần · vượt {item.exceededMinutes} phút (tối đa {warnings.maxWeeklyMinutes} phút)</li>)}</ul></>}
-    </section>}
     <section className="account-card">
       <div className="schedule-toolbar"><button aria-label="Tuần trước" onClick={() => changeWeek(addDays(week, -7))}>←</button>
         <div className="schedule-week-picker"><label htmlFor="schedule-week">Chọn tuần</label><input id="schedule-week" type="date" value={week} onChange={event => changeWeek(event.target.value)} /></div>
@@ -90,9 +75,12 @@ export function SchedulePage({ employee = false }: { employee?: boolean }) {
         </tbody></table></div><Pager page={data.page} pages={data.totalPages} onChange={setPage} /></>}
     </section>
     {modal === 'shifts' && <ShiftLibrary onClose={() => setModal(null)} />}
+    {modal === 'generate' && <DraftSelectionModal week={week} onClose={() => setModal(null)} onSaved={draftSaved} />}
+    {modal === 'warnings' && <DraftWarningsModal warnings={warnings} error={warningsError} onClose={() => setModal(null)}
+      onAssign={shortage => { setDraftTarget(shortage); setModal('draftAssign') }} />}
     {modal === 'assign' && <Assignment initialDate={week} onClose={() => setModal(null)} onSaved={date => { setModal(null); changeWeek(date); setNotice('Đã phân ca cho nhân viên.'); refresh(value => value + 1) }} />}
     {modal === 'draftAssign' && <Assignment draft initialDate={draftTarget?.workDate ?? week} initialShiftId={draftTarget?.shiftTemplateId} initialShiftName={draftTarget?.shiftName} onClose={() => setModal(null)} onSaved={() => {
-      setModal(null)
+      setModal('warnings')
       setNotice('Đã gán tay vào bản nháp.')
       refresh(value => value + 1)
     }} />}
