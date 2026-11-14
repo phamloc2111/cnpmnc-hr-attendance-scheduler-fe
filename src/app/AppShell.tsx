@@ -49,6 +49,7 @@ export function AppShell({ role, name, path, loggingOut, onChangePassword, onLog
     { path: '/my-schedule', label: 'Lịch của tôi', icon: 'calendar' as const },
     { path: '/leave', label: 'Xin nghỉ phép', icon: 'calendar' as const },
     { path: '/employee', label: 'Chấm công', icon: 'clock' as const },
+    { path: '/shift-pass', label: 'Pass ca', icon: 'check' as const },
     { path: '/my-explanations', label: 'Giải trình', icon: 'check' as const },
     { path: '/my-diligence', label: 'Chuyên cần', icon: 'clock' as const },
   ] : [
