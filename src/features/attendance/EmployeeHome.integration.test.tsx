@@ -61,8 +61,8 @@ it('opens direct camera attendance for the selected shift without recording with
   await user.click(screen.getByRole('button', { name: 'Điểm danh' }))
   const dialog = within(screen.getByRole('dialog', { name: 'Điểm danh ca làm' }))
   expect(dialog.getByText('Ca chiều · Vào ca')).toBeInTheDocument()
-  expect(dialog.getByRole('button', { name: 'Chụp và điểm danh vào' })).toBeDisabled()
-  expect(dialog.getByText(/không mở được camera/i)).toBeInTheDocument()
+  expect(dialog.getByRole('button', { name: 'Điểm danh vào' })).toBeDisabled()
+  expect(dialog.getByLabelText('Chọn ảnh Timemark')).toBeInTheDocument()
 })
 
 it('keeps the attendance action visible but disabled when no shift exists', async () => {
