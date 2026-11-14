@@ -222,3 +222,4 @@
   .login-layout .login-form h2 { font-size:27px; }
 }
 @media(prefers-reduced-motion:reduce) { :where(.themed-app,.login-layout,.modal) button { transition:none; } }
+.home-bottom-nav { display:none !important; }
